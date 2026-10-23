@@ -1,0 +1,59 @@
+
+name: Construir APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compilar aplicación Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Instalar herramientas Android
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar SDK requerido
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Crear proyecto Android
+        run: npx cap add android
+
+      - name: Copiar archivos web a Android
+        run: npx cap sync android
+
+      - name: Compilar APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mi-control-financiero-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
