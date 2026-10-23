@@ -1,17 +1,18 @@
+
 {
   "name": "mi-control-financiero",
   "version": "1.0.0",
   "private": true,
-  "description": "Aplicación personal de finanzas offline para Android",
+  "description": "Aplicacion personal de control financiero offline",
+  "type": "module",
   "scripts": {
-    "build": "echo 'Web assets ready'",
-    "android:sync": "cap sync android"
+    "build": "echo Aplicacion web lista para Capacitor"
   },
   "dependencies": {
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/core": "^6.2.1"
+    "@capacitor/android": "6.2.2",
+    "@capacitor/core": "6.2.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.2.1"
+    "@capacitor/cli": "6.2.2"
   }
 }
