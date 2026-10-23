@@ -36,9 +36,12 @@ jobs:
       - name: Instalar herramientas Android
         uses: android-actions/setup-android@v3
 
-      - name: Instalar SDK requerido
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Aceptar licencias de Android
+        run: yes | sdkmanager --licenses
 
+      - name: Instalar SDK requerido
+        run: yes | sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        
       - name: Crear proyecto Android
         run: npx cap add android
 
