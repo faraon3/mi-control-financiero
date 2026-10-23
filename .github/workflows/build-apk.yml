@@ -39,6 +39,9 @@ jobs:
       - name: Aceptar licencias de Android
         run: yes | sdkmanager --licenses
 
+      - name: Aceptar licencias de Android
+        run: yes | sdkmanager --licenses
+
       - name: Instalar SDK requerido
         run: yes | sdkmanager "platforms;android-35" "build-tools;35.0.0"
         
