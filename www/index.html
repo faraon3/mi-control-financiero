@@ -1,0 +1,599 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>Mi Control Financiero</title>
+  <style>
+    :root {
+      --bg: #f3f5f9;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #697386;
+      --primary: #315efb;
+      --border: #e4e8f0;
+      --green: #13865b;
+      --red: #d64444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 22px 18px 18px;
+      border-radius: 0 0 22px 22px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1 { font-size: 21px; margin: 0; }
+    header p { color: #c4cbd8; margin: 7px 0 0; font-size: 13px; }
+
+    .balance {
+      background: #202b40;
+      border: 1px solid #35425b;
+      border-radius: 16px;
+      margin-top: 20px;
+      padding: 16px;
+    }
+
+    .balance small { color: #c4cbd8; }
+    .amount { font-size: 30px; font-weight: 750; margin-top: 5px; }
+
+    main { max-width: 850px; margin: auto; padding: 16px 14px 100px; }
+
+    .section-title {
+      font-size: 18px;
+      margin: 8px 0 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      min-width: 0;
+    }
+
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric-value { font-size: 19px; font-weight: 750; margin-top: 7px; overflow-wrap: anywhere; }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+
+    .panel { margin-top: 22px; }
+    label { display: block; font-size: 13px; font-weight: 650; margin: 12px 0 6px; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #d9dfeb;
+      border-radius: 10px;
+      background: white;
+      padding: 12px;
+      font: inherit;
+      color: var(--text);
+    }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      background: var(--primary);
+      color: white;
+      padding: 12px 15px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button.secondary { background: #e9edff; color: #2548ce; }
+    button.danger { background: #fff0f0; color: #b72e2e; }
+    .full { width: 100%; margin-top: 14px; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin: 20px 0;
+      padding-bottom: 3px;
+    }
+
+    .tabs button { white-space: nowrap; background: #e5e9f2; color: #414b60; }
+    .tabs button.active { background: var(--primary); color: white; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .item {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .item:last-child { border-bottom: 0; }
+    .item small { display: block; color: var(--muted); margin-top: 4px; }
+    .empty { color: var(--muted); text-align: center; padding: 20px 5px; font-size: 14px; }
+
+    .notice {
+      border-radius: 12px;
+      padding: 13px;
+      background: #fff7df;
+      color: #795b10;
+      font-size: 13px;
+      margin-top: 14px;
+    }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .actions button { flex: 1; }
+
+    @media (min-width: 650px) {
+      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      header { padding-left: max(22px, calc((100% - 820px) / 2)); padding-right: max(22px, calc((100% - 820px) / 2)); }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body.dark {
+        --bg: #0d111b; --card: #151c2a; --text: #edf1fa;
+        --muted: #a2acc0; --border: #293246;
+      }
+    }
+
+    body.dark { --bg: #0d111b; --card: #151c2a; --text: #edf1fa; --muted: #a2acc0; --border: #293246; }
+    body.dark input, body.dark select, body.dark textarea { background: #101725; color: var(--text); border-color: #354158; }
+    body.dark .tabs button { background: #252e40; color: #e6eaf3; }
+    body.dark .tabs button.active { background: var(--primary); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-row">
+      <div>
+        <h1>Mi Control Financiero</h1>
+        <p>Organiza tu dinero, paso a paso</p>
+      </div>
+      <button class="secondary" id="themeButton" type="button">◐</button>
+    </div>
+    <div class="balance">
+      <small>Dinero disponible registrado</small>
+      <div class="amount" id="available">$ 0</div>
+      <small id="today"></small>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <div class="card">
+        <div class="metric-label">Ingresos del mes</div>
+        <div class="metric-value green" id="incomeTotal">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Gastos del mes</div>
+        <div class="metric-value red" id="expenseTotal">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Deudas registradas</div>
+        <div class="metric-value" id="debtTotal">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Movimientos</div>
+        <div class="metric-value" id="movementCount">0</div>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Secciones">
+      <button class="active" data-view="home">Inicio</button>
+      <button data-view="movements">Movimientos</button>
+      <button data-view="homeExpenses">Hogar</button>
+      <button data-view="debts">Deudas</button>
+      <button data-view="goals">Metas</button>
+      <button data-view="plan">Plan de sueldo</button>
+    </nav>
+
+    <section class="view active" id="home">
+      <h2 class="section-title">Tu resumen</h2>
+      <div class="card">
+        <strong>Bienvenido</strong>
+        <p>Registra tus ingresos y gastos para empezar a entender cómo se mueve tu dinero.</p>
+        <div class="notice">Esta versión inicial guarda los datos en el almacenamiento local del dispositivo. Todavía no es una herramienta de asesoría financiera ni sustituye la revisión de tus obligaciones.</div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Movimiento rápido</h2>
+        <button class="full" id="quickIncome" type="button">＋ Registrar ingreso</button>
+        <button class="full secondary" id="quickExpense" type="button">－ Registrar gasto</button>
+      </div>
+    </section>
+
+    <section class="view" id="movements">
+      <h2 class="section-title">Registrar movimiento</h2>
+      <form id="movementForm" class="card">
+        <label for="movementType">Tipo</label>
+        <select id="movementType" required>
+          <option value="expense">Gasto</option>
+          <option value="income">Ingreso</option>
+        </select>
+        <label for="movementDescription">Descripción</label>
+        <input id="movementDescription" placeholder="Ej. mercado, salario, transporte" required maxlength="100">
+        <label for="movementAmount">Valor en pesos colombianos</label>
+        <input id="movementAmount" type="number" min="1" step="1" placeholder="150000" required>
+        <label for="movementCategory">Categoría</label>
+        <select id="movementCategory">
+          <option>Salario</option><option>Arriendo</option><option>Servicios</option>
+          <option>Mercado</option><option>Transporte</option><option>Deudas</option>
+          <option>Salud</option><option>Educación</option><option>Otros</option>
+        </select>
+        <label for="movementAccount">Medio de pago o cuenta</label>
+        <select id="movementAccount">
+          <option>Efectivo</option><option>Nequi</option><option>Daviplata</option>
+          <option>Cuenta bancaria</option><option>Tarjeta de crédito</option><option>Otro</option>
+        </select>
+        <label for="movementDate">Fecha</label>
+        <input id="movementDate" type="date" required>
+        <button class="full" type="submit">Guardar movimiento</button>
+      </form>
+      <div class="panel card">
+        <h2 class="section-title">Historial</h2>
+        <div id="movementList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="homeExpenses">
+      <h2 class="section-title">Gastos compartidos del hogar</h2>
+      <form id="homeForm" class="card">
+        <label for="homeDescription">Concepto</label>
+        <input id="homeDescription" placeholder="Ej. arriendo, internet, energía" required maxlength="100">
+        <label for="homeAmount">Valor total</label>
+        <input id="homeAmount" type="number" min="1" step="1" required>
+        <label for="homePaid">¿Cuánto pagaste tú?</label>
+        <input id="homePaid" type="number" min="0" step="1" required>
+        <label for="homeSplit">Tu porcentaje acordado</label>
+        <select id="homeSplit"><option value="50">50 %</option><option value="60">60 %</option><option value="40">40 %</option><option value="100">100 %</option></select>
+        <button class="full" type="submit">Guardar gasto del hogar</button>
+      </form>
+      <div class="panel card">
+        <h2 class="section-title">Resumen del hogar</h2>
+        <div id="homeList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="debts">
+      <h2 class="section-title">Mis deudas</h2>
+      <form id="debtForm" class="card">
+        <label for="debtName">Nombre de la deuda</label>
+        <input id="debtName" placeholder="Ej. tarjeta de crédito" required maxlength="100">
+        <label for="debtAmount">Saldo pendiente</label>
+        <input id="debtAmount" type="number" min="1" step="1" required>
+        <label for="debtRate">Interés mensual (%) si lo conoces</label>
+        <input id="debtRate" type="number" min="0" max="100" step="0.01" value="0">
+        <label for="debtDue">Próximo vencimiento</label>
+        <input id="debtDue" type="date">
+        <button class="full" type="submit">Guardar deuda</button>
+      </form>
+      <div class="panel card"><h2 class="section-title">Deudas registradas</h2><div id="debtList"></div></div>
+    </section>
+
+    <section class="view" id="goals">
+      <h2 class="section-title">Metas de ahorro</h2>
+      <form id="goalForm" class="card">
+        <label for="goalName">Nombre de la meta</label>
+        <input id="goalName" placeholder="Ej. fondo de emergencia" required maxlength="100">
+        <label for="goalTarget">Valor objetivo</label>
+        <input id="goalTarget" type="number" min="1" step="1" required>
+        <label for="goalSaved">Cuánto llevas ahorrado</label>
+        <input id="goalSaved" type="number" min="0" step="1" value="0" required>
+        <button class="full" type="submit">Guardar meta</button>
+      </form>
+      <div class="panel card"><h2 class="section-title">Mis metas</h2><div id="goalList"></div></div>
+    </section>
+
+    <section class="view" id="plan">
+      <h2 class="section-title">Plan de sueldo inteligente</h2>
+      <div class="card">
+        <p>Registra cuánto dinero tienes disponible y cuándo esperas tu próximo sueldo. La app mostrará un resumen orientativo para ayudarte a revisar tus prioridades.</p>
+        <label for="planCash">Dinero disponible actualmente</label>
+        <input id="planCash" type="number" min="0" step="1" placeholder="Ej. 450000">
+        <label for="salaryDate">Fecha estimada del próximo sueldo</label>
+        <input id="salaryDate" type="date">
+        <button class="full" id="calculatePlan" type="button">Calcular mi resumen</button>
+        <div id="planResult" class="notice" hidden></div>
+      </div>
+      <div class="notice">El cálculo inicial no verifica contratos, mora real, tasas efectivas ni gastos futuros completos. Confirma cada obligación antes de decidir qué pagar.</div>
+    </section>
+
+    <section class="panel card">
+      <h2 class="section-title">Copia de seguridad</h2>
+      <p>Guarda una copia de los datos para recuperarlos si cambias de dispositivo o borras la aplicación.</p>
+      <div class="actions">
+        <button id="exportButton" type="button">Exportar datos</button>
+        <button class="secondary" id="importButton" type="button">Restaurar copia</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+      </div>
+      <p class="metric-label">El archivo exportado contiene información financiera personal. Guárdalo en un lugar seguro.</p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "mcf_data_v1";
+      const $ = id => document.getElementById(id);
+      const money = value => new Intl.NumberFormat("es-CO", {
+        style: "currency", currency: "COP", maximumFractionDigits: 0
+      }).format(Number(value) || 0);
+      const today = new Date();
+      const dateISO = d => {
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+      };
+      $("today").textContent = today.toLocaleDateString("es-CO", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+      });
+      $("movementDate").value = dateISO(today);
+
+      let data = { movements: [], home: [], debts: [], goals: [] };
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (saved && typeof saved === "object") {
+          data = {
+            movements: Array.isArray(saved.movements) ? saved.movements : [],
+            home: Array.isArray(saved.home) ? saved.home : [],
+            debts: Array.isArray(saved.debts) ? saved.debts : [],
+            goals: Array.isArray(saved.goals) ? saved.goals : []
+          };
+        }
+      } catch (error) {
+        console.warn("No fue posible leer los datos guardados.", error);
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          render();
+        } catch (error) {
+          alert("No fue posible guardar los datos. Revisa el espacio disponible del dispositivo.");
+        }
+      }
+
+      function safe(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;",
+          '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+
+      function listHTML(items, renderItem, emptyText) {
+        if (!items.length) return '<div class="empty">' + safe(emptyText) + "</div>";
+        return items.map(renderItem).join("");
+      }
+
+      function render() {
+        const month = dateISO(today).slice(0, 7);
+        const monthly = data.movements.filter(m => m.date && m.date.slice(0, 7) === month);
+        const incomes = monthly.filter(m => m.type === "income").reduce((s, m) => s + m.amount, 0);
+        const expenses = monthly.filter(m => m.type === "expense").reduce((s, m) => s + m.amount, 0);
+        $("incomeTotal").textContent = money(incomes);
+        $("expenseTotal").textContent = money(expenses);
+        $("debtTotal").textContent = money(data.debts.reduce((s, d) => s + d.amount, 0));
+        $("movementCount").textContent = String(data.movements.length);
+        const allIn = data.movements.filter(m => m.type === "income").reduce((s, m) => s + m.amount, 0);
+        const allOut = data.movements.filter(m => m.type === "expense").reduce((s, m) => s + m.amount, 0);
+        $("available").textContent = money(allIn - allOut);
+
+        $("movementList").innerHTML = listHTML(
+          [...data.movements].reverse(),
+          m => '<div class="item"><div><strong>' + safe(m.description) +
+            '</strong><small>' + safe(m.category) + " · " + safe(m.account) +
+            " · " + safe(m.date) + '</small></div><div style="text-align:right"><strong class="' +
+            (m.type === "income" ? "green" : "red") + '">' +
+            (m.type === "income" ? "+" : "−") + money(m.amount) +
+            '</strong><br><button class="danger" style="padding:5px 8px;margin-top:6px" data-delete-movement="' +
+            safe(m.id) + '" type="button">Eliminar</button></div></div>',
+          "Todavía no has registrado movimientos."
+        );
+
+        $("homeList").innerHTML = listHTML(
+          [...data.home].reverse(),
+          h => '<div class="item"><div><strong>' + safe(h.description) +
+            '</strong><small>Total: ' + money(h.amount) + " · Tu parte acordada: " +
+            money(h.amount * h.split / 100) + " · Tú pagaste: " + money(h.paid) +
+            '</small><small>' + (h.paid < h.amount * h.split / 100
+              ? "Te falta aportar: " + money(h.amount * h.split / 100 - h.paid)
+              : "Tu aporte cubre tu parte acordada") +
+            '</small></div><button class="danger" data-delete-home="' + safe(h.id) +
+            '" type="button">Eliminar</button></div>',
+          "No has registrado gastos del hogar."
+        );
+
+        $("debtList").innerHTML = listHTML(
+          data.debts,
+          d => '<div class="item"><div><strong>' + safe(d.name) +
+            '</strong><small>Interés mensual: ' + safe(d.rate) + "% · Vence: " +
+            safe(d.due || "Sin fecha") + '</small></div><strong>' + money(d.amount) +
+            '</strong></div>',
+          "No has registrado deudas."
+        );
+
+        $("goalList").innerHTML = listHTML(
+          data.goals,
+          g => '<div class="item"><div><strong>' + safe(g.name) +
+            '</strong><small>Ahorrado: ' + money(g.saved) + " de " +
+            money(g.target) + '</small><small>Progreso: ' +
+            Math.min(100, Math.round(g.saved / g.target * 100)) +
+            '%</small></div><strong>' + money(g.target - g.saved > 0 ? g.target - g.saved : 0) +
+            '</strong></div>',
+          "Todavía no has creado metas de ahorro."
+        );
+      }
+
+      document.querySelectorAll("[data-view]").forEach(button => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b === button));
+          document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === button.dataset.view));
+        });
+      });
+
+      $("movementForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const amount = Number($("movementAmount").value);
+        if (!Number.isSafeInteger(amount) || amount <= 0) return alert("Escribe un valor válido en pesos.");
+        data.movements.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+          type: $("movementType").value,
+          description: $("movementDescription").value.trim(),
+          amount,
+          category: $("movementCategory").value,
+          account: $("movementAccount").value,
+          date: $("movementDate").value
+        });
+        save();
+        event.target.reset();
+        $("movementDate").value = dateISO(new Date());
+      });
+
+      $("homeForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const amount = Number($("homeAmount").value);
+        const paid = Number($("homePaid").value);
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(paid) || paid < 0) {
+          return alert("Revisa los valores ingresados.");
+        }
+        data.home.push({
+          id: String(Date.now()), description: $("homeDescription").value.trim(),
+          amount, paid, split: Number($("homeSplit").value)
+        });
+        save(); event.target.reset();
+      });
+
+      $("debtForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const amount = Number($("debtAmount").value);
+        const rate = Number($("debtRate").value || 0);
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isFinite(rate) || rate < 0) {
+          return alert("Revisa el saldo y el interés.");
+        }
+        data.debts.push({
+          id: String(Date.now()), name: $("debtName").value.trim(),
+          amount, rate, due: $("debtDue").value
+        });
+        save(); event.target.reset();
+      });
+
+      $("goalForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const target = Number($("goalTarget").value);
+        const saved = Number($("goalSaved").value);
+        if (!Number.isSafeInteger(target) || target <= 0 || !Number.isSafeInteger(saved) || saved < 0) {
+          return alert("Revisa los valores de la meta.");
+        }
+        data.goals.push({
+          id: String(Date.now()), name: $("goalName").value.trim(), target, saved
+        });
+        save(); event.target.reset();
+      });
+
+      document.addEventListener("click", event => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        if (button.dataset.deleteMovement) {
+          if (confirm("¿Quieres eliminar este movimiento?")) {
+            data.movements = data.movements.filter(m => m.id !== button.dataset.deleteMovement);
+            save();
+          }
+        }
+        if (button.dataset.deleteHome) {
+          if (confirm("¿Quieres eliminar este gasto del hogar?")) {
+            data.home = data.home.filter(h => h.id !== button.dataset.deleteHome);
+            save();
+          }
+        }
+      });
+
+      $("quickIncome").addEventListener("click", () => {
+        document.querySelector('[data-view="movements"]').click();
+        $("movementType").value = "income";
+        $("movementDescription").focus();
+      });
+
+      $("quickExpense").addEventListener("click", () => {
+        document.querySelector('[data-view="movements"]').click();
+        $("movementType").value = "expense";
+        $("movementDescription").focus();
+      });
+
+      $("calculatePlan").addEventListener("click", () => {
+        const cash = Number($("planCash").value);
+        if (!Number.isFinite(cash) || cash < 0) return alert("Escribe cuánto dinero tienes disponible.");
+        const upcoming = data.debts.filter(d => d.due && d.due >= dateISO(today))
+          .sort((a, b) => a.due.localeCompare(b.due));
+        const result = $("planResult");
+        result.hidden = false;
+        result.textContent = "Dinero indicado: " + money(cash) +
+          ". Deudas registradas con vencimiento próximo: " + upcoming.length +
+          ". Revisa primero necesidades básicas y vencimientos cercanos. Este resumen no descuenta obligaciones automáticamente ni determina por sí solo qué deuda debes pagar.";
+      });
+
+      $("themeButton").addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        $("themeButton").textContent = document.body.classList.contains("dark") ? "☀" : "◐";
+      });
+
+      $("exportButton").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify({
+          version: 1, exportedAt: new Date().toISOString(), data
+        }, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "mi-control-financiero-respaldo.json";
+        a.click(); URL.revokeObjectURL(url);
+      });
+
+      $("importButton").addEventListener("click", () => $("importFile").click());
+
+      $("importFile").addEventListener("change", async event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+          const backup = JSON.parse(await file.text());
+          const restored = backup.data || backup;
+          if (!restored || !Array.isArray(restored.movements) ||
+              !Array.isArray(restored.home) || !Array.isArray(restored.debts) ||
+              !Array.isArray(restored.goals)) {
+            throw new Error("Formato de copia no válido.");
+          }
+          if (!confirm("Restaurar la copia reemplazará los datos actuales. ¿Continuar?")) return;
+          data = restored;
+          save();
+          alert("Copia restaurada.");
+        } catch (error) {
+          alert("No se pudo restaurar la copia. Comprueba que sea un archivo válido.");
+        } finally {
+          event.target.value = "";
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
