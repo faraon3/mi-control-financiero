@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0f1a">
 <title>Mi Control Financiero</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    TOKENS M3 EXPRESSIVE
@@ -777,6 +774,82 @@ canvas{width:100%;height:200px;max-width:100%}
 }
 .chart-legend span{display:flex;align-items:center;gap:6px}
 .chart-legend .sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+
+/* ============================================================
+   AJUSTE VISUAL MINIMALISTA — versión ligera y cómoda en móvil
+   Mantiene las funciones y el almacenamiento existentes.
+   ============================================================ */
+:root{
+  --shape-xs:6px;
+  --shape-sm:9px;
+  --shape-md:12px;
+  --shape-lg:16px;
+  --shape-xl:20px;
+  --pad:16px;
+  --nav-h:68px;
+  --surface-dim:#0d1119;
+  --surface:#111722;
+  --surface-container-low:#141b27;
+  --surface-container:#171f2d;
+  --surface-container-high:#1d2736;
+  --surface-container-highest:#263244;
+  --outline:#2a3443;
+  --outline-variant:#202a38;
+}
+html{background:var(--surface-dim)}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0}
+header.app{padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:12px}
+header.app h1{font-size:19px;font-weight:650;letter-spacing:-.35px}
+.today{font-size:12px;opacity:.72;margin-top:3px}
+.wrap{padding-top:8px;padding-bottom:calc(var(--nav-h) + 30px + env(safe-area-inset-bottom))}
+.hero{
+  background:var(--surface-container-low);
+  border:1px solid var(--outline-variant);
+  border-radius:18px;
+  padding:19px 18px 16px;
+  margin-top:8px;
+  box-shadow:none;
+}
+.hero .label{font-size:11px;letter-spacing:.45px}
+.hero-amount{font-size:clamp(27px,7vw,34px);letter-spacing:-1px;margin-top:7px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.hero-sub{font-size:12px;margin-top:4px}
+.hero-safe{margin-top:13px;font-size:12px;flex-wrap:wrap;gap:6px}
+.hero-safe strong{font-family:inherit;font-weight:650}
+.hero-available{margin-top:13px;padding-top:12px}
+.hero-available .amt-sm{font-size:17px;font-family:inherit}
+.alerts{gap:6px;margin-top:10px}
+.alert{padding:10px 12px;border-radius:12px;background:var(--surface-container-low);border-color:var(--outline-variant);box-shadow:none}
+.alert .ic{width:30px;height:30px}
+.alert .cta{padding:6px 9px;background:transparent}
+.section{margin-top:20px}
+.section-head{margin-bottom:8px;align-items:center}
+.section-head h2{font-size:14px;font-weight:650;letter-spacing:-.1px}
+.section-head a{font-size:12px;padding:3px 4px}
+.card{background:transparent;border:1px solid var(--outline-variant);border-radius:14px;padding:13px;box-shadow:none}
+.item,.move-item,.list-item{border-color:var(--outline-variant)}
+button{box-shadow:none;transition:opacity .15s,transform .15s}
+button:active{transform:scale(.98)}
+input,select,textarea{border-radius:11px}
+.seg{margin:12px 0 8px;gap:5px}
+.seg button{padding:8px 12px;border-radius:10px}
+.bottom-nav,nav.bottom-nav{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.foot{font-size:11px;opacity:.75;margin-top:12px}
+/* En pantallas pequeñas, los detalles permanecen dentro de sus secciones; no se amontonan en Inicio. */
+@media(max-width:520px){
+  .wrap{padding-left:14px;padding-right:14px}
+  .hero{padding:18px 16px 15px}
+  .section{margin-top:18px}
+  .card{padding:12px}
+  .section-head h2{font-size:13px}
+  .alert .s{line-height:1.35}
+}
+@media(min-width:700px){
+  .wrap{max-width:760px}
+  .hero{padding:22px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
 </style>
 </head>
 <body>
