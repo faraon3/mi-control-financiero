@@ -1,667 +1,1457 @@
+Aquí tienes el código completamente organizado, con sangrías claras, comentarios explicativos y una estructura limpia para que puedas leerlo, entenderlo y modificarlo sin complicaciones.
+
+```html
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>Mi Control Financiero</title>
-<style>
-:root {
-  --bg:#f3f5f9;
-  --card:#fff;
-  --text:#182235;
-  --muted:#687386;
-  --line:#e3e8f0;
-  --blue:#315efb;
-  --green:#13865b;
-  --red:#c83d4b;
-  --soft:#edf1ff}
-* {
-  box-sizing:border-box}
-body {
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui,sans-serif}
-body.dark {
-  --bg:#0c111b;
-  --card:#151d2b;
-  --text:#eef2fb;
-  --muted:#a6b0c3;
-  --line:#2a3549;
-  --soft:#202b45}
-header {
-  background:#101827;
-  color:white;
-  padding:20px 16px;
-  border-radius:0 0 22px 22px}
-header,main {
-  max-width:1050px;
-  margin:auto}
-header {
-  max-width:none}
-header .top {
-  max-width:1050px;
-  margin:auto;
-  display:flex;
-  justify-content:space-between;
-  align-items:center}
-h1 {
-  font-size:21px;
-  margin:0}
-header p {
-  margin:5px 0;
-  color:#c5cede;
-  font-size:13px}
-.hero {
-  max-width:1050px;
-  margin:15px auto 0;
-  padding:15px;
-  background:#1d293d;
-  border-radius:15px}
-.hero small {
-  color:#c5cede}
-.hero strong {
-  display:block;
-  font-size:29px;
-  margin:5px 0}
-main {
-  padding:14px 12px 60px}
-.grid {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:9px}
-.card {
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:15px;
-  padding:14px;
-  min-width:0}
-.metric-label {
-  font-size:12px;
-  color:var(--muted)}
-.metric-value {
-  font-size:19px;
-  font-weight:750;
-  margin-top:5px;
-  overflow-wrap:anywhere}
-.green {
-  color:var(--green)}
-.red {
-  color:var(--red)}
-.tabs {
-  display:flex;
-  gap:7px;
-  overflow-x:auto;
-  margin:16px 0;
-  padding-bottom:5px}
-.tabs button {
-  white-space:nowrap;
-  background:var(--soft);
-  color:var(--text)}
-button {
-  border:0;
-  border-radius:10px;
-  padding:11px 13px;
-  background:var(--blue);
-  color:white;
-  font:inherit;
-  font-size:14px;
-  font-weight:650;
-  cursor:pointer}
-button.secondary {
-  background:var(--soft);
-  color:var(--text)}
-button.danger {
-  background:#fff0f0;
-  color:#a72d39}
-.tabs button.active {
-  background:var(--blue);
-  color:white}
-.view {
-  display:none}
-.view.active {
-  display:block}
-.section-title {
-  font-size:18px;
-  margin:7px 0 13px}
-.panel {
-  margin-top:14px}
-label {
-  display:block;
-  font-size:13px;
-  font-weight:650;
-  margin:11px 0 6px}
-input,select,textarea {
-  width:100%;
-  min-width:0;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:var(--card);
-  padding:11px;
-  color:var(--text);
-  font:inherit}
-.row {
-  display:flex;
-  gap:8px}
-.row>* {
-  flex:1;
-  min-width:0}
-.full {
-  width:100%;
-  margin-top:12px}
-.item {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:10px;
-  padding:12px 0;
-  border-bottom:1px solid var(--line)}
-.item:last-child {
-  border:0}
-.item small {
-  display:block;
-  color:var(--muted);
-  font-size:12px;
-  margin-top:4px;
-  line-height:1.45}
-.actions {
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-top:8px}
-.actions button {
-  flex:1}
-.empty {
-  text-align:center;
-  color:var(--muted);
-  padding:18px 4px}
-.progress {
-  height:8px;
-  background:var(--line);
-  border-radius:10px;
-  overflow:hidden;
-  margin-top:7px}
-.progress span {
-  display:block;
-  height:100%;
-  background:var(--blue)}
-.notice {
-  padding:12px;
-  background:#fff5d9;
-  color:#73560b;
-  border-radius:10px;
-  font-size:13px;
-  margin-top:12px}
-.foot {
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.5}
-.hidden {
-  display:none!important}
-canvas {
-  width:100%;
-  height:200px}
-@media(min-width:700px) {
-  .grid {
-  grid-template-columns:repeat(4,minmax(0,1fr))}
-.forms {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px}
-.span2 {
-  grid-column:span 2}
-}
-</style>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Mi Control Financiero</title>
+  
+  <style>
+    /* ==========================================
+       VARIABLES Y CONFIGURACIÓN GLOBAL
+       ========================================== */
+    :root {
+      --bg: #f3f5f9;
+      --card: #fff;
+      --text: #182235;
+      --muted: #687386;
+      --line: #e3e8f0;
+      --blue: #315efb;
+      --green: #13865b;
+      --red: #c83d4b;
+      --soft: #edf1ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+    }
+
+    body.dark {
+      --bg: #0c111b;
+      --card: #151d2b;
+      --text: #eef2fb;
+      --muted: #a6b0c3;
+      --line: #2a3549;
+      --soft: #202b45;
+    }
+
+    /* ==========================================
+       ESTRUCTURA Y COMPONENTES PRINCIPALES
+       ========================================== */
+    header {
+      background: #101827;
+      color: white;
+      padding: 20px 16px;
+      border-radius: 0 0 22px 22px;
+    }
+
+    header, main {
+      max-width: 1050px;
+      margin: auto;
+    }
+
+    header {
+      max-width: none;
+    }
+
+    header .top {
+      max-width: 1050px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 21px;
+      margin: 0;
+    }
+
+    header p {
+      margin: 5px 0;
+      color: #c5cede;
+      font-size: 13px;
+    }
+
+    .hero {
+      max-width: 1050px;
+      margin: 15px auto 0;
+      padding: 15px;
+      background: #1d293d;
+      border-radius: 15px;
+    }
+
+    .hero small {
+      color: #c5cede;
+    }
+
+    .hero strong {
+      display: block;
+      font-size: 29px;
+      margin: 5px 0;
+    }
+
+    main {
+      padding: 14px 12px 60px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-size: 19px;
+      font-weight: 750;
+      margin-top: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+
+    /* ==========================================
+       NAVEGACIÓN Y PESTAÑAS (TABS)
+       ========================================== */
+    .tabs {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      margin: 16px 0;
+      padding-bottom: 5px;
+    }
+
+    .tabs button {
+      white-space: nowrap;
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .tabs button.active {
+      background: var(--blue);
+      color: white;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    /* ==========================================
+       BOTONES Y FORMULARIOS
+       ========================================== */
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 13px;
+      background: var(--blue);
+      color: white;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    button.danger {
+      background: #fff0f0;
+      color: #a72d39;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 7px 0 13px;
+    }
+
+    .panel {
+      margin-top: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 650;
+      margin: 11px 0 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      padding: 11px;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .row > * {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .full {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* ==========================================
+       LISTAS Y ELEMENTOS DE DATOS
+       ========================================== */
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .item:last-child {
+      border: 0;
+    }
+
+    .item small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .actions button {
+      flex: 1;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 18px 4px;
+    }
+
+    .progress {
+      height: 8px;
+      background: var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 7px;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .notice {
+      padding: 12px;
+      background: #fff5d9;
+      color: #73560b;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .foot {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    canvas {
+      width: 100%;
+      height: 200px;
+    }
+
+    /* ==========================================
+       DISEÑO RESPONSIVO (PANTALLAS GRANDES)
+       ========================================== */
+    @media(min-width: 700px) {
+      .grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .forms {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .span2 {
+        grid-column: span 2;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<header>
-  <div class="top">
-  <div>
-  <h1>Mi Control Financiero</h1>
-  <p>Tu dinero, organizado en un solo lugar</p></div>
-  <button id="theme" class="secondary">◐ Tema</button></div>
-  <div class="hero"><small>Saldo neto registrado</small><strong id="balance">$ 0</strong><small id="today"></small></div></header>
+  <!-- ENCABEZADO Y RESUMEN GENERAL -->
+  <header>
+    <div class="top">
+      <div>
+        <h1>Mi Control Financiero</h1>
+        <p>Tu dinero, organizado en un solo lugar</p>
+      </div>
+      <button id="theme" class="secondary">◐ Tema</button>
+    </div>
+    <div class="hero">
+      <small>Saldo neto registrado</small>
+      <strong id="balance">$ 0</strong>
+      <small id="today"></small>
+    </div>
+  </header>
 
-<main>
-  <div class="grid">
+  <main>
+    <!-- TARJETAS DE MÉTRICAS PRINCIPALES -->
+    <div class="grid">
+      <div class="card">
+        <div class="metric-label">Ingresos del mes</div>
+        <div class="metric-value green" id="mi">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Gastos del mes</div>
+        <div class="metric-value red" id="me">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Deudas pendientes</div>
+        <div class="metric-value" id="md">$ 0</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">Presupuesto usado</div>
+        <div class="metric-value" id="mp">0%</div>
+      </div>
+    </div>
 
-  <div class="card">
-  <div class="metric-label">Ingresos del mes</div>
-  <div class="metric-value green" id="mi">$ 0</div></div>
-  <div class="card">
-  <div class="metric-label">Gastos del mes</div>
-  <div class="metric-value red" id="me">$ 0</div></div>
-  <div class="card">
-  <div class="metric-label">Deudas pendientes</div>
-  <div class="metric-value" id="md">$ 0</div></div>
-  <div class="card">
-  <div class="metric-label">Presupuesto usado</div>
-  <div class="metric-value" id="mp">0%</div></div></div>
+    <!-- MENÚ DE NAVEGACIÓN POR PESTAÑAS -->
+    <nav class="tabs">
+      <button class="active" data-tab="home">Inicio</button>
+      <button data-tab="moves">Movimientos</button>
+      <button data-tab="accounts">Cuentas</button>
+      <button data-tab="budgets">Presupuestos</button>
+      <button data-tab="bills">Facturas</button>
+      <button data-tab="debts">Deudas</button>
+      <button data-tab="goals">Ahorro</button>
+      <button data-tab="house">Hogar</button>
+      <button data-tab="reports">Informes</button>
+      <button data-tab="backup">Copias y auditoría</button>
+    </nav>
 
-<nav class="tabs">
-  <button class="active" data-tab="home">Inicio</button>
-  <button data-tab="moves">Movimientos</button>
-  <button data-tab="accounts">Cuentas</button>
-  <button data-tab="budgets">Presupuestos</button>
-  <button data-tab="bills">Facturas</button>
-  <button data-tab="debts">Deudas</button>
-  <button data-tab="goals">Ahorro</button>
-  <button data-tab="house">Hogar</button>
-  <button data-tab="reports">Informes</button>
-  <button data-tab="backup">Copias y auditoría</button></nav>
+    <!-- VISTA: INICIO -->
+    <section class="view active" id="home">
+      <h2 class="section-title">Resumen</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="metric-label">Saldo de cuentas</div>
+          <div class="metric-value" id="ma">$ 0</div>
+        </div>
+        <div class="card">
+          <div class="metric-label">Facturas pendientes</div>
+          <div class="metric-value" id="mb">$ 0</div>
+        </div>
+        <div class="card">
+          <div class="metric-label">Metas de ahorro</div>
+          <div class="metric-value" id="mg">0</div>
+        </div>
+        <div class="card">
+          <div class="metric-label">Movimientos</div>
+          <div class="metric-value" id="mc">0</div>
+        </div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Acceso rápido</h2>
+        <div class="row">
+          <button id="qi">＋ Ingreso</button>
+          <button id="qe" class="secondary">－ Gasto</button>
+        </div>
+        <h2 class="section-title panel">Próximos vencimientos</h2>
+        <div id="upcoming"></div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Últimos movimientos</h2>
+        <div id="recent"></div>
+      </div>
+      <p class="foot">Funciona localmente y no se conecta a bancos ni realiza pagos. Exporta copias periódicamente.</p>
+    </section>
 
-<section class="view active" id="home">
-  <h2 class="section-title">Resumen</h2>
-  <div class="grid">
-  <div class="card">
-  <div class="metric-label">Saldo de cuentas</div>
-  <div class="metric-value" id="ma">$ 0</div></div>
-  <div class="card">
-  <div class="metric-label">Facturas pendientes</div>
-  <div class="metric-value" id="mb">$ 0</div></div>
-  <div class="card">
-  <div class="metric-label">Metas de ahorro</div>
-  <div class="metric-value" id="mg">0</div></div>
-  <div class="card">
-  <div class="metric-label">Movimientos</div>
-  <div class="metric-value" id="mc">0</div></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Acceso rápido</h2>
-  <div class="row">
-  <button id="qi">＋ Ingreso</button>
-  <button id="qe" class="secondary">－ Gasto</button></div>
-  <h2 class="section-title panel">Próximos vencimientos</h2>
-  <div id="upcoming"></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Últimos movimientos</h2>
-  <div id="recent"></div></div>
-  <p class="foot">Funciona localmente y no se conecta a bancos ni realiza pagos. Exporta copias periódicamente.</p></section>
+    <!-- VISTA: MOVIMIENTOS -->
+    <section class="view" id="moves">
+      <h2 class="section-title">Ingresos y gastos</h2>
+      <form id="mf" class="card">
+        <input id="mid" type="hidden">
+        <div class="forms">
+          <div>
+            <label>Tipo</label>
+            <select id="type">
+              <option value="expense">Gasto</option>
+              <option value="income">Ingreso</option>
+            </select>
+          </div>
+          <div>
+            <label>Fecha</label>
+            <input id="date" type="date" required>
+          </div>
+          <div>
+            <label>Descripción</label>
+            <input id="desc" maxlength="100" required placeholder="Mercado, salario...">
+          </div>
+          <div>
+            <label>Valor COP</label>
+            <input id="amount" type="number" min="1" step="1" required>
+          </div>
+          <div>
+            <label>Categoría</label>
+            <select id="cat">
+              <option>Salario</option>
+              <option>Arriendo</option>
+              <option>Servicios</option>
+              <option>Mercado</option>
+              <option>Transporte</option>
+              <option>Salud</option>
+              <option>Educación</option>
+              <option>Deudas</option>
+              <option>Entretenimiento</option>
+              <option>Ahorro</option>
+              <option>Otros</option>
+            </select>
+          </div>
+          <div>
+            <label>Cuenta</label>
+            <select id="accsel"></select>
+          </div>
+          <div class="span2">
+            <label>Nota opcional</label>
+            <textarea id="note" rows="2"></textarea>
+          </div>
+          <div class="span2">
+            <label>Motivo obligatorio al editar/eliminar</label>
+            <input id="reason" maxlength="250" placeholder="Se solicita solo al modificar">
+          </div>
+        </div>
+        <button class="full" id="msave">Guardar movimiento</button>
+        <button class="full secondary hidden" type="button" id="mcancel">Cancelar edición</button>
+      </form>
 
-<section class="view" id="moves">
-  <h2 class="section-title">Ingresos y gastos</h2>
-<form id="mf" class="card">
-  <input id="mid" type="hidden">
-  <div class="forms">
-  <div>
-  <label>Tipo</label>
-  <select id="type">
-  <option value="expense">Gasto</option>
-  <option value="income">Ingreso</option></select></div>
-  <div>
-  <label>Fecha</label>
-  <input id="date" type="date" required></div>
-  <div>
-  <label>Descripción</label>
-  <input id="desc" maxlength="100" required placeholder="Mercado, salario..."></div>
-  <div>
-  <label>Valor COP</label>
-  <input id="amount" type="number" min="1" step="1" required></div>
-  <div>
-  <label>Categoría</label>
-  <select id="cat">
-  <option>Salario</option>
-  <option>Arriendo</option>
-  <option>Servicios</option>
-  <option>Mercado</option>
-  <option>Transporte</option>
-  <option>Salud</option>
-  <option>Educación</option>
-  <option>Deudas</option>
-  <option>Entretenimiento</option>
-  <option>Ahorro</option>
-  <option>Otros</option></select></div>
-  <div>
-  <label>Cuenta</label>
-  <select id="accsel"></select></div>
-  <div class="span2">
-  <label>Nota opcional</label>
-  <textarea id="note" rows="2"></textarea></div>
-  <div class="span2">
-  <label>Motivo obligatorio al editar/eliminar</label>
-  <input id="reason" maxlength="250" placeholder="Se solicita solo al modificar"></div></div>
-  <button class="full" id="msave">Guardar movimiento</button>
-  <button class="full secondary hidden" type="button" id="mcancel">Cancelar edición</button></form>
+      <div class="card panel">
+        <div class="row">
+          <div>
+            <label>Tipo</label>
+            <select id="ft">
+              <option value="all">Todos</option>
+              <option value="income">Ingresos</option>
+              <option value="expense">Gastos</option>
+            </select>
+          </div>
+          <div>
+            <label>Mes</label>
+            <input id="fm" type="month">
+          </div>
+        </div>
+        <label>Buscar</label>
+        <input id="fs" placeholder="Descripción o categoría">
+        <h2 class="section-title panel">Historial</h2>
+        <div id="ml"></div>
+      </div>
+    </section>
 
-  <div class="card panel">
-  <div class="row">
-  <div>
-  <label>Tipo</label>
-  <select id="ft">
-  <option value="all">Todos</option>
-  <option value="income">Ingresos</option>
-  <option value="expense">Gastos</option></select></div>
-  <div>
-  <label>Mes</label>
-  <input id="fm" type="month"></div></div>
-  <label>Buscar</label>
-  <input id="fs" placeholder="Descripción o categoría">
-  <h2 class="section-title panel">Historial</h2>
-  <div id="ml"></div></div></section>
+    <!-- VISTA: CUENTAS -->
+    <section class="view" id="accounts">
+      <h2 class="section-title">Cuentas y tarjetas</h2>
+      <form id="af" class="card">
+        <input id="aid" type="hidden">
+        <label>Nombre</label>
+        <input id="aname" required maxlength="70" placeholder="Efectivo, banco, Nequi...">
+        <div class="row">
+          <div>
+            <label>Tipo</label>
+            <select id="atype">
+              <option>Efectivo</option>
+              <option>Cuenta bancaria</option>
+              <option>Billetera digital</option>
+              <option>Tarjeta de crédito</option>
+              <option>Ahorros</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div>
+            <label>Saldo inicial COP</label>
+            <input id="opening" type="number" step="1" value="0" required>
+          </div>
+        </div>
+        <button class="full">Guardar cuenta</button>
+      </form>
 
-<section class="view" id="accounts">
-  <h2 class="section-title">Cuentas y tarjetas</h2>
-<form id="af" class="card">
-  <input id="aid" type="hidden">
-  <label>Nombre</label>
-  <input id="aname" required maxlength="70" placeholder="Efectivo, banco, Nequi...">
-  <div class="row">
-  <div>
-  <label>Tipo</label>
-  <select id="atype">
-  <option>Efectivo</option>
-  <option>Cuenta bancaria</option>
-  <option>Billetera digital</option>
-  <option>Tarjeta de crédito</option>
-  <option>Ahorros</option>
-  <option>Otro</option></select></div>
-  <div>
-  <label>Saldo inicial COP</label>
-  <input id="opening" type="number" step="1" value="0" required></div></div>
-  <button class="full">Guardar cuenta</button></form>
+      <div class="card panel">
+        <div id="al"></div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Transferencia entre cuentas</h2>
+        <p class="foot">Las transferencias no cuentan como ingreso ni gasto.</p>
+        <form id="tf">
+          <label>Desde</label>
+          <select id="from"></select>
+          <label>Hacia</label>
+          <select id="to"></select>
+          <label>Valor COP</label>
+          <input id="ta" type="number" min="1" required>
+          <label>Fecha</label>
+          <input id="td" type="date" required>
+          <button class="full">Registrar transferencia</button>
+        </form>
+        <div id="tl"></div>
+      </div>
+    </section>
 
-  <div class="card panel">
-  <div id="al"></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Transferencia entre cuentas</h2>
-  <p class="foot">Las transferencias no cuentan como ingreso ni gasto.</p>
-<form id="tf">
-  <label>Desde</label>
-  <select id="from"></select>
-  <label>Hacia</label>
-  <select id="to"></select>
-  <label>Valor COP</label>
-  <input id="ta" type="number" min="1" required>
-  <label>Fecha</label>
-  <input id="td" type="date" required>
-  <button class="full">Registrar transferencia</button></form>
+    <!-- VISTA: PRESUPUESTOS -->
+    <section class="view" id="budgets">
+      <h2 class="section-title">Presupuestos mensuales</h2>
+      <form id="bf" class="card">
+        <input id="bid" type="hidden">
+        <label>Categoría</label>
+        <select id="bc">
+          <option>Arriendo</option>
+          <option>Servicios</option>
+          <option>Mercado</option>
+          <option>Transporte</option>
+          <option>Salud</option>
+          <option>Educación</option>
+          <option>Deudas</option>
+          <option>Entretenimiento</option>
+          <option>Otros</option>
+        </select>
+        <label>Límite COP</label>
+        <input id="bl" type="number" min="1" required>
+        <button class="full">Guardar presupuesto</button>
+      </form>
+      <div class="card panel" id="budgetlist"></div>
+    </section>
 
-  <div id="tl"></div></div></section>
+    <!-- VISTA: FACTURAS -->
+    <section class="view" id="bills">
+      <h2 class="section-title">Facturas y pagos recurrentes</h2>
+      <form id="billf" class="card">
+        <input id="billid" type="hidden">
+        <label>Concepto</label>
+        <input id="bn" required maxlength="100">
+        <div class="row">
+          <div>
+            <label>Valor COP</label>
+            <input id="ba" type="number" min="1" required>
+          </div>
+          <div>
+            <label>Vencimiento</label>
+            <input id="bd" type="date" required>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Categoría</label>
+            <select id="bcat">
+              <option>Arriendo</option>
+              <option>Servicios</option>
+              <option>Internet</option>
+              <option>Telefonía</option>
+              <option>Deudas</option>
+              <option>Otros</option>
+            </select>
+          </div>
+          <div>
+            <label>Repetición</label>
+            <select id="br">
+              <option value="none">No recurrente</option>
+              <option value="monthly">Mensual</option>
+              <option value="weekly">Semanal</option>
+              <option value="yearly">Anual</option>
+            </select>
+          </div>
+        </div>
+        <button class="full">Guardar factura</button>
+      </form>
+      <div class="card panel" id="billlist"></div>
+      <p class="foot">Los vencimientos se muestran al abrir la app; notificaciones del sistema requieren configuración adicional.</p>
+    </section>
 
-<section class="view" id="budgets">
-  <h2 class="section-title">Presupuestos mensuales</h2>
-<form id="bf" class="card">
-  <input id="bid" type="hidden">
-  <label>Categoría</label>
-  <select id="bc">
-  <option>Arriendo</option>
-  <option>Servicios</option>
-  <option>Mercado</option>
-  <option>Transporte</option>
-  <option>Salud</option>
-  <option>Educación</option>
-  <option>Deudas</option>
-  <option>Entretenimiento</option>
-  <option>Otros</option></select>
-  <label>Límite COP</label>
-  <input id="bl" type="number" min="1" required>
-  <button class="full">Guardar presupuesto</button></form>
+    <!-- VISTA: DEUDAS -->
+    <section class="view" id="debts">
+      <h2 class="section-title">Deudas y cuotas</h2>
+      <form id="df" class="card">
+        <input id="did" type="hidden">
+        <label>Nombre de deuda</label>
+        <input id="dn" required maxlength="100">
+        <div class="row">
+          <div>
+            <label>Saldo pendiente COP</label>
+            <input id="da" type="number" min="1" required>
+          </div>
+          <div>
+            <label>Interés mensual %</label>
+            <input id="dr" type="number" min="0" max="100" step=".01" value="0">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Cuota estimada COP</label>
+            <input id="di" type="number" min="0" value="0">
+          </div>
+          <div>
+            <label>Próximo vencimiento</label>
+            <input id="dd" type="date">
+          </div>
+        </div>
+        <button class="full">Guardar deuda</button>
+      </form>
+      <div class="card panel" id="debtlist"></div>
+    </section>
 
-  <div class="card panel" id="budgetlist"></div></section>
+    <!-- VISTA: METAS DE AHORRO -->
+    <section class="view" id="goals">
+      <h2 class="section-title">Metas de ahorro</h2>
+      <form id="gf" class="card">
+        <input id="gid" type="hidden">
+        <label>Nombre de meta</label>
+        <input id="gn" required maxlength="100">
+        <div class="row">
+          <div>
+            <label>Objetivo COP</label>
+            <input id="gt" type="number" min="1" required>
+          </div>
+          <div>
+            <label>Ahorrado COP</label>
+            <input id="gs" type="number" min="0" value="0" required>
+          </div>
+        </div>
+        <label>Fecha objetivo opcional</label>
+        <input id="gd" type="date">
+        <button class="full">Guardar meta</button>
+      </form>
+      <div class="card panel" id="goallist"></div>
+    </section>
 
-<section class="view" id="bills">
-  <h2 class="section-title">Facturas y pagos recurrentes</h2>
-<form id="billf" class="card">
-  <input id="billid" type="hidden">
-  <label>Concepto</label>
-  <input id="bn" required maxlength="100">
-  <div class="row">
-  <div>
-  <label>Valor COP</label>
-  <input id="ba" type="number" min="1" required></div>
-  <div>
-  <label>Vencimiento</label>
-  <input id="bd" type="date" required></div></div>
-  <div class="row">
-  <div>
-  <label>Categoría</label>
-  <select id="bcat">
-  <option>Arriendo</option>
-  <option>Servicios</option>
-  <option>Internet</option>
-  <option>Telefonía</option>
-  <option>Deudas</option>
-  <option>Otros</option></select></div>
-  <div>
-  <label>Repetición</label>
-  <select id="br">
-  <option value="none">No recurrente</option>
-  <option value="monthly">Mensual</option>
-  <option value="weekly">Semanal</option>
-  <option value="yearly">Anual</option></select></div></div>
-  <button class="full">Guardar factura</button></form>
+    <!-- VISTA: HOGAR -->
+    <section class="view" id="house">
+      <h2 class="section-title">Gastos compartidos del hogar</h2>
+      <form id="hf" class="card">
+        <input id="hid" type="hidden">
+        <label>Concepto</label>
+        <input id="hn" required maxlength="100">
+        <div class="row">
+          <div>
+            <label>Total COP</label>
+            <input id="ha" type="number" min="1" required>
+          </div>
+          <div>
+            <label>Pagaste COP</label>
+            <input id="hp" type="number" min="0" required>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Tu parte</label>
+            <select id="hs">
+              <option value="50">50 %</option>
+              <option value="60">60 %</option>
+              <option value="40">40 %</option>
+              <option value="100">100 %</option>
+              <option value="25">25 %</option>
+              <option value="75">75 %</option>
+            </select>
+          </div>
+          <div>
+            <label>Fecha</label>
+            <input id="hd" type="date" required>
+          </div>
+        </div>
+        <button class="full">Guardar gasto del hogar</button>
+      </form>
+      <div class="card panel" id="houselist"></div>
+    </section>
 
-  <div class="card panel" id="billlist"></div>
-  <p class="foot">Los vencimientos se muestran al abrir la app; notificaciones del sistema requieren configuración adicional.</p></section>
+    <!-- VISTA: INFORMES -->
+    <section class="view" id="reports">
+      <h2 class="section-title">Informes</h2>
+      <div class="card">
+        <label>Mes</label>
+        <input id="rm" type="month">
+        <div class="grid panel">
+          <div>
+            <div class="metric-label">Ingresos</div>
+            <div class="metric-value green" id="ri">$ 0</div>
+          </div>
+          <div>
+            <div class="metric-label">Gastos</div>
+            <div class="metric-value red" id="re">$ 0</div>
+          </div>
+          <div>
+            <div class="metric-label">Balance</div>
+            <div class="metric-value" id="rb">$ 0</div>
+          </div>
+          <div>
+            <div class="metric-label">Movimientos</div>
+            <div class="metric-value" id="rc">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Gastos por categoría</h2>
+        <div id="catsreport"></div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Últimos seis meses</h2>
+        <canvas id="chart" width="800" height="240"></canvas>
+      </div>
+    </section>
 
-<section class="view" id="debts">
-  <h2 class="section-title">Deudas y cuotas</h2>
-<form id="df" class="card">
-  <input id="did" type="hidden">
-  <label>Nombre de deuda</label>
-  <input id="dn" required maxlength="100">
-  <div class="row">
-  <div>
-  <label>Saldo pendiente COP</label>
-  <input id="da" type="number" min="1" required></div>
-  <div>
-  <label>Interés mensual %</label>
-  <input id="dr" type="number" min="0" max="100" step=".01" value="0"></div></div>
-  <div class="row">
-  <div>
-  <label>Cuota estimada COP</label>
-  <input id="di" type="number" min="0" value="0"></div>
-  <div>
-  <label>Próximo vencimiento</label>
-  <input id="dd" type="date"></div></div>
-  <button class="full">Guardar deuda</button></form>
+    <!-- VISTA: COPIAS Y AUDITORÍA -->
+    <section class="view" id="backup">
+      <h2 class="section-title">Copias y auditoría</h2>
+      <div class="card">
+        <p>Exporta todos tus datos para guardarlos de forma segura.</p>
+        <div class="actions">
+          <button id="export">Exportar copia JSON</button>
+          <button id="csv" class="secondary">Exportar movimientos CSV</button>
+        </div>
+        <label>Restaurar copia JSON (reemplaza los datos actuales)</label>
+        <input id="import" type="file" accept=".json,application/json">
+        <p class="foot">El historial se guarda localmente y no es inalterable ante acceso al dispositivo.</p>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Historial de cambios</h2>
+        <div id="auditlist"></div>
+      </div>
+      <div class="card panel">
+        <h2 class="section-title">Zona de peligro</h2>
+        <button id="reset" class="danger">Borrar todos los datos</button>
+      </div>
+    </section>
+  </main>
 
-  <div class="card panel" id="debtlist"></div></section>
+  <!-- LÓGICA JAVASCRIPT -->
+  <script>
+    (() => {
+      "use strict";
 
-<section class="view" id="goals">
-  <h2 class="section-title">Metas de ahorro</h2>
-<form id="gf" class="card">
-  <input id="gid" type="hidden">
-  <label>Nombre de meta</label>
-  <input id="gn" required maxlength="100">
-  <div class="row">
-  <div>
-  <label>Objetivo COP</label>
-  <input id="gt" type="number" min="1" required></div>
-  <div>
-  <label>Ahorrado COP</label>
-  <input id="gs" type="number" min="0" value="0" required></div></div>
-  <label>Fecha objetivo opcional</label>
-  <input id="gd" type="date">
-  <button class="full">Guardar meta</button></form>
+      const K = "mcf_v2";
+      const $ = id => document.getElementById(id);
+      
+      const money = value =>
+        new Intl.NumberFormat("es-CO", {
+          style: "currency",
+          currency: "COP",
+          maximumFractionDigits: 0
+        }).format(Number(value) || 0);
 
-  <div class="card panel" id="goallist"></div></section>
+      const now = () => new Date().toISOString();
+      
+      const uid = () =>
+        crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
 
-<section class="view" id="house">
-  <h2 class="section-title">Gastos compartidos del hogar</h2>
-<form id="hf" class="card">
-  <input id="hid" type="hidden">
-  <label>Concepto</label>
-  <input id="hn" required maxlength="100">
-  <div class="row">
-  <div>
-  <label>Total COP</label>
-  <input id="ha" type="number" min="1" required></div>
-  <div>
-  <label>Pagaste COP</label>
-  <input id="hp" type="number" min="0" required></div></div>
-  <div class="row">
-  <div>
-  <label>Tu parte</label>
-  <select id="hs">
-  <option value="50">50 %</option>
-  <option value="60">60 %</option>
-  <option value="40">40 %</option>
-  <option value="100">100 %</option>
-  <option value="25">25 %</option>
-  <option value="75">75 %</option></select></div>
-  <div>
-  <label>Fecha</label>
-  <input id="hd" type="date" required></div></div>
-  <button class="full">Guardar gasto del hogar</button></form>
+      const today = new Date();
+      
+      const iso = date => {
+        const adjustedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return adjustedDate.toISOString().slice(0, 10);
+      };
 
-  <div class="card panel" id="houselist"></div></section>
+      const month = iso(today).slice(0, 7);
 
-<section class="view" id="reports">
-  <h2 class="section-title">Informes</h2>
-  <div class="card">
-  <label>Mes</label>
-  <input id="rm" type="month">
-  <div class="grid panel">
-  <div>
-  <div class="metric-label">Ingresos</div>
-  <div class="metric-value green" id="ri">$ 0</div></div>
-  <div>
-  <div class="metric-label">Gastos</div>
-  <div class="metric-value red" id="re">$ 0</div></div>
-  <div>
-  <div class="metric-label">Balance</div>
-  <div class="metric-value" id="rb">$ 0</div></div>
-  <div>
-  <div class="metric-label">Movimientos</div>
-  <div class="metric-value" id="rc">0</div></div></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Gastos por categoría</h2>
-  <div id="catsreport"></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Últimos seis meses</h2>
-  <canvas id="chart" width="800" height="240"></canvas></div></section>
+      const safe = value =>
+        String(value ?? "").replace(/[&<>"']/g, character => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[character]);
 
-<section class="view" id="backup">
-  <h2 class="section-title">Copias y auditoría</h2>
-  <div class="card">
-  <p>Exporta todos tus datos para guardarlos de forma segura.</p>
-  <div class="actions">
-  <button id="export">Exportar copia JSON</button>
-  <button id="csv" class="secondary">Exportar movimientos CSV</button></div>
-  <label>Restaurar copia JSON (reemplaza los datos actuales)</label>
-  <input id="import" type="file" accept=".json,application/json">
-  <p class="foot">El historial se guarda localmente y no es inalterable ante acceso al dispositivo.</p></div>
-  <div class="card panel">
-  <h2 class="section-title">Historial de cambios</h2>
-  <div id="auditlist"></div></div>
-  <div class="card panel">
-  <h2 class="section-title">Zona de peligro</h2>
-  <button id="reset" class="danger">Borrar todos los datos</button></div></section>
+      const fmt = date =>
+        date
+          ? new Date(date + "T12:00:00").toLocaleDateString("es-CO", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            })
+          : "Sin fecha";
 
-</main>
+      $("today").textContent = today.toLocaleDateString("es-CO", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
 
-<script>
-(()=>{"use strict";const K="mcf_v2", $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(Number(n)||0), now=()=>new Date().toISOString(),uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),today=new Date(),iso=d=>{let x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10)},month=iso(today).slice(0,7),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"}):"Sin fecha";
-$("today").textContent=today.toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[]};try{let old=JSON.parse(localStorage.getItem(K)||"null");if(old)Object.keys(d).forEach(k=>d[k]=Array.isArray(old[k])?old[k]:[])}catch(e){}
-function log(action,entity,details,reason=""){d.audit.unshift({id:uid(),at:now(),action,entity,details,reason});d.audit=d.audit.slice(0,1000)}
-function save(){try{localStorage.setItem(K,JSON.stringify(d));render()}catch(e){alert("No se pudo guardar. Exporta una copia y revisa el espacio disponible.")}}
-function total(m){let a=d.moves.filter(x=>x.date?.slice(0,7)===m);return{a,i:a.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),e:a.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0)}}
-function bal(a){return Number(a.opening||0)+d.moves.filter(m=>m.account===a.id).reduce((s,m)=>s+(m.type==="income"?1:-1)*m.amount,0)+d.transfers.reduce((s,t)=>s+(t.to===a.id?t.amount:t.from===a.id?-t.amount:0),0)}
-function out(id,arr,fn,empty="No hay registros todavía."){$(id).innerHTML=arr.length?arr.map(fn).join(""):`
-  <div class="empty">${safe(empty)}</div>`}
-function opts(id){let old=$(id).value;$(id).innerHTML=d.accounts.map(a=>`
-  <option value="${a.id}">${safe(a.name)}</option>`).join("")||'
-  <option value="">Crea primero una cuenta</option>';if(d.accounts.some(a=>a.id===old))$(id).value=old}
-function render(){let t=total(month),budget=d.budgets.reduce((s,b)=>s+b.limit,0),spent=t.e;$("balance").textContent=money(d.accounts.reduce((s,a)=>s+bal(a),0));$("mi").textContent=money(t.i);$("me").textContent=money(t.e);$("md").textContent=money(d.debts.reduce((s,x)=>s+x.amount,0));$("mp").textContent=(budget?Math.round(spent/budget*100):0)+"%";$("ma").textContent=money(d.accounts.reduce((s,a)=>s+bal(a),0));$("mb").textContent=money(d.bills.filter(b=>!b.paid).reduce((s,b)=>s+b.amount,0));$("mg").textContent=d.goals.length;$("mc").textContent=d.moves.length;["accsel","from","to"].forEach(opts);
-let filter=d.moves.filter(m=>($("ft").value==="all"||m.type===$("ft").value)&&(!$("fm").value||m.date.startsWith($("fm").value))&&(`${m.desc} ${m.cat}`.toLowerCase().includes($("fs").value.toLowerCase()))).sort((a,b)=>b.date.localeCompare(a.date));
-const moveHTML=m=>`
-  <div class="item">
-  <div><strong>${safe(m.desc)}</strong><small>${safe(m.cat)} · ${safe(d.accounts.find(a=>a.id===m.account)?.name||"Cuenta")} · ${fmt(m.date)}</small>
-  <div class="actions">
-  <button class="secondary" data-edit-m="${m.id}">Editar</button>
-  <button class="danger" data-del-m="${m.id}">Eliminar</button></div></div><strong class="${m.type==="income"?"green":"red"}">${m.type==="income"?"+":"−"}${money(m.amount)}</strong></div>`;
-out("ml",filter,moveHTML);out("recent",d.moves.slice().sort((a,b)=>b.created.localeCompare(a.created)).slice(0,5),m=>`
-  <div class="item">
-  <div><strong>${safe(m.desc)}</strong><small>${fmt(m.date)} · ${safe(m.cat)}</small></div><strong class="${m.type==="income"?"green":"red"}">${money(m.amount)}</strong></div>`);
-out("al",d.accounts,a=>`
-  <div class="item">
-  <div><strong>${safe(a.name)}</strong><small>${safe(a.type)} · Saldo inicial ${money(a.opening)}</small>
-  <div class="actions">
-  <button class="secondary" data-edit-a="${a.id}">Editar</button>
-  <button class="danger" data-del-a="${a.id}">Eliminar</button></div></div><strong>${money(bal(a))}</strong></div>`);
-out("tl",d.transfers,t=>`
-  <div class="item">
-  <div>${safe(t.fn)} → ${safe(t.tn)}<small>${fmt(t.date)} · Transferencia interna</small></div><strong>${money(t.amount)}</strong></div>`);
-out("budgetlist",d.budgets,b=>{let used=total(month).a.filter(m=>m.type==="expense"&&m.cat===b.cat).reduce((s,m)=>s+m.amount,0),p=Math.min(100,Math.round(used/b.limit*100));return `
-  <div class="item">
-  <div style="flex:1"><strong>${safe(b.cat)}</strong><small>${money(used)} de ${money(b.limit)} · ${p}%</small>
-  <div class="progress"><span style="width:${p}%"></span></div>
-  <div class="actions">
-  <button class="secondary" data-edit-b="${b.id}">Editar</button>
-  <button class="danger" data-del-b="${b.id}">Eliminar</button></div></div></div>`});
-let bills=d.bills.slice().sort((a,b)=>a.due.localeCompare(b.due));out("billlist",bills,b=>`
-  <div class="item">
-  <div><strong>${safe(b.name)} ${b.paid?"· Pagada":b.due<iso(today)?"· Vencida":""}</strong><small>${safe(b.cat)} · Vence ${fmt(b.due)} · ${safe(b.repeat)}</small>
-  <div class="actions">${b.paid?"":`
-  <button data-pay-b="${b.id}">Marcar pagada</button>`}
-  <button class="secondary" data-edit-bill="${b.id}">Editar</button>
-  <button class="danger" data-del-bill="${b.id}">Eliminar</button></div></div><strong>${money(b.amount)}</strong></div>`);
-out("upcoming",bills.filter(b=>!b.paid).slice(0,4),b=>`
-  <div class="item">
-  <div><strong>${safe(b.name)}</strong><small>Vence ${fmt(b.due)}</small></div><strong>${money(b.amount)}</strong></div>`,"No tienes facturas pendientes.");
-out("debtlist",d.debts,x=>`
-  <div class="item">
-  <div><strong>${safe(x.name)}</strong><small>Interés ${x.rate||0}% mensual · Cuota ${money(x.installment||0)} · Vence ${fmt(x.due)}</small>
-  <div class="actions">
-  <button data-pay-d="${x.id}">Abonar</button>
-  <button class="secondary" data-edit-d="${x.id}">Editar</button>
-  <button class="danger" data-del-d="${x.id}">Eliminar</button></div></div><strong>${money(x.amount)}</strong></div>`);
-out("goallist",d.goals,g=>{let p=Math.min(100,Math.round(g.saved/g.target*100));return `
-  <div class="item">
-  <div style="flex:1"><strong>${safe(g.name)}</strong><small>${money(g.saved)} de ${money(g.target)} · Falta ${money(Math.max(0,g.target-g.saved))}</small>
-  <div class="progress"><span style="width:${p}%"></span></div>
-  <div class="actions">
-  <button data-add-g="${g.id}">Agregar ahorro</button>
-  <button class="secondary" data-edit-g="${g.id}">Editar</button>
-  <button class="danger" data-del-g="${g.id}">Eliminar</button></div></div><strong>${p}%</strong></div>`});
-out("houselist",d.house,h=>`
-  <div class="item">
-  <div><strong>${safe(h.name)}</strong><small>${fmt(h.date)} · Total ${money(h.amount)} · Tu parte ${money(h.amount*h.split/100)} · Pagaste ${money(h.paid)}</small>
-  <div class="actions">
-  <button class="secondary" data-edit-h="${h.id}">Editar</button>
-  <button class="danger" data-del-h="${h.id}">Eliminar</button></div></div></div>`);
-let r=total($("rm").value||month);$("ri").textContent=money(r.i);$("re").textContent=money(r.e);$("rb").textContent=money(r.i-r.e);$("rc").textContent=r.a.length;let cats={};r.a.filter(m=>m.type==="expense").forEach(m=>cats[m.cat]=(cats[m.cat]||0)+m.amount);out("catsreport",Object.entries(cats).sort((a,b)=>b[1]-a[1]),x=>`
-  <div class="item"><strong>${safe(x[0])}</strong><strong>${money(x[1])}</strong></div>`);
-chart();out("auditlist",d.audit.slice(0,100),a=>`
-  <div class="item">
-  <div><strong>${safe(a.action)} · ${safe(a.entity)}</strong><small>${new Date(a.at).toLocaleString("es-CO")}<br>${safe(a.details)}${a.reason?"<br>Motivo: "+safe(a.reason):""}</small></div></div>`)}
-function chart(){let c=$("chart"),x=c.getContext("2d"),w=c.width,h=c.height;x.clearRect(0,0,w,h);let ms=[];for(let i=5;i>=0;i--){let z=new Date(today.getFullYear(),today.getMonth()-i,1);ms.push(z.getFullYear()+"-"+String(z.getMonth()+1).padStart(2,"0"))}let vals=ms.map(total),max=Math.max(1,...vals.flatMap(t=>[t.i,t.e])),slot=(w-60)/6;x.font="12px system-ui";vals.forEach((t,i)=>{let xx=40+i*slot;x.fillStyle="#13865b";x.fillRect(xx,h-32-(h-60)*t.i/max,slot*.27,(h-60)*t.i/max);x.fillStyle="#c83d4b";x.fillRect(xx+slot*.31,h-32-(h-60)*t.e/max,slot*.27,(h-60)*t.e/max);x.fillStyle="#687386";x.fillText(ms[i].slice(5),xx,h-10)})}
-function reset(form){$(form).reset();$(form).querySelectorAll('[type=hidden]').forEach(x=>x.value="")}
-function view(id){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id))}
-document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>view(b.dataset.tab));$("qi").onclick=()=>{view("moves");$("type").value="income";$("desc").focus()};$("qe").onclick=()=>{view("moves");$("type").value="expense";$("desc").focus()};
-$("mf").onsubmit=e=>{e.preventDefault();let id=$("mid").value,old=d.moves.find(x=>x.id===id),amount=Number($("amount").value);if(!Number.isSafeInteger(amount)||amount<=0)return alert("Valor entero no válido.");if(!d.accounts.length)return alert("Crea una cuenta primero.");if(old&&!$("reason").value.trim())return alert("Escribe el motivo de la edición.");let m={id:id||uid(),type:$("type").value,date:$("date").value,desc:$("desc").value.trim(),amount,cat:$("cat").value,account:$("accsel").value,note:$("note").value.trim(),created:old?.created||now()};if(old){d.moves=d.moves.map(x=>x.id===id?m:x);log("Edición","Movimiento",`${old.desc} ${money(old.amount)} → ${m.desc} ${money(m.amount)}`,$("reason").value.trim())}else{d.moves.push(m);log("Alta","Movimiento",`${m.desc} · ${money(amount)}`)}save();reset("mf");$("date").value=iso(new Date());$("msave").textContent="Guardar movimiento";$("mcancel").classList.add("hidden")};
-$("mcancel").onclick=()=>{reset("mf");$("date").value=iso(new Date());$("msave").textContent="Guardar movimiento";$("mcancel").classList.add("hidden")};
-$("af").onsubmit=e=>{e.preventDefault();let id=$("aid").value,old=d.accounts.find(a=>a.id===id),a={id:id||uid(),name:$("aname").value.trim(),type:$("atype").value,opening:Number($("opening").value)||0};if(old)d.accounts=d.accounts.map(x=>x.id===id?a:x);else d.accounts.push(a);log(old?"Edición":"Alta","Cuenta",a.name);save();reset("af")};
-$("tf").onsubmit=e=>{e.preventDefault();let from=$("from").value,to=$("to").value,amount=Number($("ta").value),a=d.accounts.find(x=>x.id===from),b=d.accounts.find(x=>x.id===to);if(!a||!b||from===to)return alert("Elige dos cuentas diferentes.");if(!Number.isSafeInteger(amount)||amount<=0)return alert("Valor no válido.");if(bal(a)<amount&&!confirm("El saldo parece insuficiente. ¿Registrar transferencia?"))return;d.transfers.push({id:uid(),from,to,fn:a.name,tn:b.name,amount,date:$("td").value});log("Transferencia","Cuentas",`${a.name} → ${b.name}: ${money(amount)}`);save();e.target.reset();$("td").value=iso(new Date())};
-$("bf").onsubmit=e=>{e.preventDefault();let id=$("bid").value,b={id:id||uid(),cat:$("bc").value,limit:Number($("bl").value)};if(!Number.isSafeInteger(b.limit)||b.limit<=0)return alert("Límite inválido.");if(id)d.budgets=d.budgets.map(x=>x.id===id?b:x);else d.budgets.push(b);log(id?"Edición":"Alta","Presupuesto",`${b.cat}: ${money(b.limit)}`);save();reset("bf")};
-$("billf").onsubmit=e=>{e.preventDefault();let id=$("billid").value,old=d.bills.find(x=>x.id===id),b={id:id||uid(),name:$("bn").value.trim(),amount:Number($("ba").value),due:$("bd").value,cat:$("bcat").value,repeat:$("br").value,paid:old?.paid||false};if(!Number.isSafeInteger(b.amount)||b.amount<=0)return alert("Valor inválido.");if(id)d.bills=d.bills.map(x=>x.id===id?b:x);else d.bills.push(b);log(id?"Edición":"Alta","Factura",b.name);save();reset("billf")};
-$("df").onsubmit=e=>{e.preventDefault();let id=$("did").value,x={id:id||uid(),name:$("dn").value.trim(),amount:Number($("da").value),rate:Number($("dr").value)||0,installment:Number($("di").value)||0,due:$("dd").value};if(!Number.isSafeInteger(x.amount)||x.amount<=0)return alert("Saldo inválido.");if(id)d.debts=d.debts.map(z=>z.id===id?x:z);else d.debts.push(x);log(id?"Edición":"Alta","Deuda",`${x.name}: ${money(x.amount)}`);save();reset("df")};
-$("gf").onsubmit=e=>{e.preventDefault();let id=$("gid").value,g={id:id||uid(),name:$("gn").value.trim(),target:Number($("gt").value),saved:Number($("gs").value)||0,date:$("gd").value};if(!Number.isSafeInteger(g.target)||g.target<=0||!Number.isSafeInteger(g.saved)||g.saved<0)return alert("Revisa los valores.");if(id)d.goals=d.goals.map(x=>x.id===id?g:x);else d.goals.push(g);log(id?"Edición":"Alta","Meta",g.name);save();reset("gf")};
-$("hf").onsubmit=e=>{e.preventDefault();let id=$("hid").value,h={id:id||uid(),name:$("hn").value.trim(),amount:Number($("ha").value),paid:Number($("hp").value),split:Number($("hs").value),date:$("hd").value};if(!Number.isSafeInteger(h.amount)||h.amount<=0||!Number.isSafeInteger(h.paid)||h.paid<0)return alert("Valores inválidos.");if(id)d.house=d.house.map(x=>x.id===id?h:x);else d.house.push(h);log(id?"Edición":"Alta","Hogar",h.name);save();reset("hf");$("hd").value=iso(new Date())};
-document.addEventListener("click",e=>{let b=e.target.closest("button");if(!b)return;const find=(arr,id)=>arr.find(x=>x.id===id);
-if(b.dataset.editM){let m=find(d.moves,b.dataset.editM);view("moves");$("mid").value=m.id;for(let [id,v] of Object.entries({type:m.type,date:m.date,desc:m.desc,amount:m.amount,cat:m.cat,accsel:m.account,note:m.note||"",reason:""}))$(id).value=v;$("msave").textContent="Guardar cambios";$("mcancel").classList.remove("hidden")}
-if(b.dataset.delM){let m=find(d.moves,b.dataset.delM),r=prompt("Motivo obligatorio para eliminar:");if(r===null)return;if(!r.trim())return alert("Debes escribir un motivo.");if(confirm(`¿Eliminar ${m.desc} (${money(m.amount)})?`)){d.moves=d.moves.filter(x=>x.id!==m.id);log("Eliminación","Movimiento",m.desc,r.trim());save()}}
-if(b.dataset.editA){let a=find(d.accounts,b.dataset.editA);$("aid").value=a.id;$("aname").value=a.name;$("atype").value=a.type;$("opening").value=a.opening;view("accounts")}
-if(b.dataset.delA){let a=find(d.accounts,b.dataset.delA);if(d.moves.some(m=>m.account===a.id)||d.transfers.some(t=>t.from===a.id||t.to===a.id))return alert("No puedes eliminar una cuenta con movimientos o transferencias.");if(confirm("¿Eliminar cuenta?")){d.accounts=d.accounts.filter(x=>x.id!==a.id);log("Eliminación","Cuenta",a.name);save()}}
-if(b.dataset.editB){let x=find(d.budgets,b.dataset.editB);$("bid").value=x.id;$("bc").value=x.cat;$("bl").value=x.limit}
-if(b.dataset.delB&&confirm("¿Eliminar presupuesto?")){d.budgets=d.budgets.filter(x=>x.id!==b.dataset.delB);log("Eliminación","Presupuesto",b.dataset.delB);save()}
-if(b.dataset.editBill){let x=find(d.bills,b.dataset.editBill);$("billid").value=x.id;$("bn").value=x.name;$("ba").value=x.amount;$("bd").value=x.due;$("bcat").value=x.cat;$("br").value=x.repeat}
-if(b.dataset.delBill&&confirm("¿Eliminar factura?")){d.bills=d.bills.filter(x=>x.id!==b.dataset.delBill);log("Eliminación","Factura",b.dataset.delBill);save()}
-if(b.dataset.payB){let x=find(d.bills,b.dataset.payB);if(!confirm("Marcar pagada? Esto no registra automáticamente un gasto."))return;x.paid=true;log("Pago marcado","Factura",x.name);if(x.repeat!=="none"){let z=new Date(x.due+"T12:00:00");if(x.repeat==="monthly")z.setMonth(z.getMonth()+1);if(x.repeat==="weekly")z.setDate(z.getDate()+7);if(x.repeat==="yearly")z.setFullYear(z.getFullYear()+1);d.bills.push({...x,id:uid(),due:iso(z),paid:false})}save()}
-if(b.dataset.editD){let x=find(d.debts,b.dataset.editD);$("did").value=x.id;$("dn").value=x.name;$("da").value=x.amount;$("dr").value=x.rate;$("di").value=x.installment;$("dd").value=x.due}
-if(b.dataset.payD){let x=find(d.debts,b.dataset.payD),v=prompt("Saldo "+money(x.amount)+". Valor del abono:");if(v===null)return;let n=Number(v),r=prompt("Motivo del abono:");if(!Number.isSafeInteger(n)||n<=0||!r?.trim())return alert("Valor o motivo inválido.");x.amount=Math.max(0,x.amount-n);log("Abono","Deuda",`${x.name}: ${money(n)}; saldo ${money(x.amount)}`,r.trim());if(!x.amount)d.debts=d.debts.filter(z=>z.id!==x.id);save()}
-if(b.dataset.delD&&confirm("¿Eliminar deuda?")){d.debts=d.debts.filter(x=>x.id!==b.dataset.delD);log("Eliminación","Deuda",b.dataset.delD);save()}
-if(b.dataset.editG){let x=find(d.goals,b.dataset.editG);$("gid").value=x.id;$("gn").value=x.name;$("gt").value=x.target;$("gs").value=x.saved;$("gd").value=x.date||""}
-if(b.dataset.addG){let x=find(d.goals,b.dataset.addG),v=prompt("¿Cuánto vas a agregar?");if(v===null)return;let n=Number(v);if(!Number.isSafeInteger(n)||n<=0)return alert("Valor inválido.");x.saved+=n;log("Ahorro agregado","Meta",`${x.name}: ${money(n)}`);save()}
-if(b.dataset.delG&&confirm("¿Eliminar meta?")){d.goals=d.goals.filter(x=>x.id!==b.dataset.delG);log("Eliminación","Meta",b.dataset.delG);save()}
-if(b.dataset.editH){let x=find(d.house,b.dataset.editH);$("hid").value=x.id;$("hn").value=x.name;$("ha").value=x.amount;$("hp").value=x.paid;$("hs").value=x.split;$("hd").value=x.date;view("house")}
-if(b.dataset.delH&&confirm("¿Eliminar gasto del hogar?")){d.house=d.house.filter(x=>x.id!==b.dataset.delH);log("Eliminación","Hogar",b.dataset.delH);save()}
-});
-["ft","fm","fs","rm"].forEach(id=>$(id).addEventListener("input",render));$("theme").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("mcf_theme",document.body.classList.contains("dark")?"dark":"light");chart()};if(localStorage.getItem("mcf_theme")==="dark")document.body.classList.add("dark");
-$("export").onclick=()=>download("mi-control-financiero-respaldo.json",JSON.stringify({app:"Mi Control Financiero",version:2,exportedAt:now(),data:d},null,2),"application/json");
-$("csv").onclick=()=>{let q=v=>'"'+String(v??"").replace(/"/g,'""')+'"',rows=[["Fecha","Tipo","Descripción","Categoría","Cuenta","Valor COP","Nota"],...d.moves.map(m=>[m.date,m.type,m.desc,m.cat,d.accounts.find(a=>a.id===m.account)?.name,m.amount,m.note])];download("movimientos.csv","\ufeff"+rows.map(r=>r.map(q).join(";")).join("\r\n"),"text/csv;charset=utf-8")};
-function download(name,content,type){let u=URL.createObjectURL(new Blob([content],{type})),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-$("import").onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let x=JSON.parse(await f.text()),z=x.data||x;if(!confirm("La restauración reemplaza todos los datos actuales. ¿Continuar?"))return;for(let k of Object.keys(d))d[k]=Array.isArray(z[k])?z[k]:[];log("Restauración","Copia","Copia importada");save();alert("Copia restaurada.")}catch(err){alert("Archivo JSON no válido.")}finally{e.target.value=""}};
-$("reset").onclick=()=>{if(prompt("Escribe BORRAR para confirmar")!=="BORRAR")return;d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[]};localStorage.removeItem(K);save();alert("Datos locales borrados.")};
-$("date").value=$("td").value=$("hd").value=iso(today);$("fm").value=$("rm").value=month;
-if(localStorage.getItem(K)===null){d.accounts.push({id:uid(),name:"Efectivo",type:"Efectivo",opening:0});save()}else render();
-})();
-</script></body></html>
+      let d = { moves: [], accounts: [], transfers: [], budgets: [], bills: [], debts: [], goals: [], house: [], audit: [] };
+      
+      try {
+        let old = JSON.parse(localStorage.getItem(K) || "null");
+        if (old) Object.keys(d).forEach(k => d[k] = Array.isArray(old[k]) ? old[k] : []);
+      } catch (e) {}
+
+      function log(action, entity, details, reason = "") {
+        d.audit.unshift({
+          id: uid(),
+          at: now(),
+          action,
+          entity,
+          details,
+          reason
+        });
+        d.audit = d.audit.slice(0, 1000);
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(K, JSON.stringify(d));
+          render();
+        } catch (error) {
+          alert("No se pudo guardar. Exporta una copia y revisa el espacio disponible.");
+        }
+      }
+
+      function total(selectedMonth) {
+        const movements = d.moves.filter(movement => movement.date?.slice(0, 7) === selectedMonth);
+        return {
+          a: movements,
+          i: movements.filter(movement => movement.type === "income").reduce((sum, movement) => sum + movement.amount, 0),
+          e: movements.filter(movement => movement.type === "expense").reduce((sum, movement) => sum + movement.amount, 0)
+        };
+      }
+
+      function bal(account) {
+        const movementBalance = d.moves
+          .filter(movement => movement.account === account.id)
+          .reduce((sum, movement) => sum + (movement.type === "income" ? 1 : -1) * movement.amount, 0);
+
+        const transferBalance = d.transfers.reduce((sum, transfer) =>
+          sum + (transfer.to === account.id ? transfer.amount : transfer.from === account.id ? -transfer.amount : 0), 0);
+
+        return Number(account.opening || 0) + movementBalance + transferBalance;
+      }
+
+      function out(id, arr, fn, empty = "No hay registros todavía.") {
+        $(id).innerHTML = arr.length ? arr.map(fn).join("") : `<div class="empty">${safe(empty)}</div>`;
+      }
+
+      function opts(id) {
+        const previousValue = $(id).value;
+        $(id).innerHTML = d.accounts.map(account => `
+          <option value="${account.id}">${safe(account.name)}</option>
+        `).join("") || `<option value="">Crea primero una cuenta</option>`;
+
+        if (d.accounts.some(account => account.id === previousValue)) {
+          $(id).value = previousValue;
+        }
+      }
+
+      function render() {
+        let t = total(month), budget = d.budgets.reduce((s, b) => s + b.limit, 0), spent = t.e;
+        
+        $("balance").textContent = money(d.accounts.reduce((s, a) => s + bal(a), 0));
+        $("mi").textContent = money(t.i);
+        $("me").textContent = money(t.e);
+        $("md").textContent = money(d.debts.reduce((s, x) => s + x.amount, 0));
+        $("mp").textContent = (budget ? Math.round(spent / budget * 100) : 0) + "%";
+        $("ma").textContent = money(d.accounts.reduce((s, a) => s + bal(a), 0));
+        $("mb").textContent = money(d.bills.filter(b => !b.paid).reduce((s, b) => s + b.amount, 0));
+        $("mg").textContent = d.goals.length;
+        $("mc").textContent = d.moves.length;
+        
+        ["accsel", "from", "to"].forEach(opts);
+
+        let filter = d.moves.filter(m => 
+          ($("ft").value === "all" || m.type === $("ft").value) && 
+          (!$("fm").value || m.date.startsWith($("fm").value)) && 
+          (`${m.desc} ${m.cat}`.toLowerCase().includes($("fs").value.toLowerCase()))
+        ).sort((a, b) => b.date.localeCompare(a.date));
+
+        const moveHTML = m => `
+          <div class="item">
+            <div>
+              <strong>${safe(m.desc)}</strong>
+              <small>${safe(m.cat)} · ${safe(d.accounts.find(a => a.id === m.account)?.name || "Cuenta")} · ${fmt(m.date)}</small>
+              <div class="actions">
+                <button class="secondary" data-edit-m="${m.id}">Editar</button>
+                <button class="danger" data-del-m="${m.id}">Eliminar</button>
+              </div>
+            </div>
+            <strong class="${m.type === "income" ? "green" : "red"}">${m.type === "income" ? "+" : "−"}${money(m.amount)}</strong>
+          </div>`;
+
+        out("ml", filter, moveHTML);
+        
+        out("recent", d.moves.slice().sort((a, b) => b.created.localeCompare(a.created)).slice(0, 5), m => `
+          <div class="item">
+            <div>
+              <strong>${safe(m.desc)}</strong>
+              <small>${fmt(m.date)} · ${safe(m.cat)}</small>
+            </div>
+            <strong class="${m.type === "income" ? "green" : "red"}">${money(m.amount)}</strong>
+          </div>`);
+
+        out("al", d.accounts, a => `
+          <div class="item">
+            <div>
+              <strong>${safe(a.name)}</strong>
+              <small>${safe(a.type)} · Saldo inicial ${money(a.opening)}</small>
+              <div class="actions">
+                <button class="secondary" data-edit-a="${a.id}">Editar</button>
+                <button class="danger" data-del-a="${a.id}">Eliminar</button>
+              </div>
+            </div>
+            <strong>${money(bal(a))}</strong>
+          </div>`);
+
+        out("tl", d.transfers, t => `
+          <div class="item">
+            <div>
+              ${safe(t.fn)} → ${safe(t.tn)}
+              <small>${fmt(t.date)} · Transferencia interna</small>
+            </div>
+            <strong>${money(t.amount)}</strong>
+          </div>`);
+
+        out("budgetlist", d.budgets, b => {
+          let used = total(month).a.filter(m => m.type === "expense" && m.cat === b.cat).reduce((s, m) => s + m.amount, 0),
+              p = Math.min(100, Math.round(used / b.limit * 100));
+          return `
+            <div class="item">
+              <div style="flex:1">
+                <strong>${safe(b.cat)}</strong>
+                <small>${money(used)} de ${money(b.limit)} · ${p}%</small>
+                <div class="progress"><span style="width:${p}%"></span></div>
+                <div class="actions">
+                  <button class="secondary" data-edit-b="${b.id}">Editar</button>
+                  <button class="danger" data-del-b="${b.id}">Eliminar</button>
+                </div>
+              </div>
+            </div>`;
+        });
+
+        let bills = d.bills.slice().sort((a, b) => a.due.localeCompare(b.due));
+        
+        out("billlist", bills, b => `
+          <div class="item">
+            <div>
+              <strong>${safe(b.name)} ${b.paid ? "· Pagada" : b.due < iso(today) ? "· Vencida" : ""}</strong>
+              <small>${safe(b.cat)} · Vence ${fmt(b.due)} · ${safe(b.repeat)}</small>
+              <div class="actions">
+                ${b.paid ? "" : `<button data-pay-b="${b.id}">Marcar pagada</button>`}
+                <button class="secondary" data-edit-bill="${b.id}">Editar</button>
+                <button class="danger" data-del-bill="${b.id}">Eliminar</button>
+              </div>
+            </div>
+            <strong>${money(b.amount)}</strong>
+          </div>`);
+
+        out("upcoming", bills.filter(b => !b.paid).slice(0, 4), b => `
+          <div class="item">
+            <div>
+              <strong>${safe(b.name)}</strong>
+              <small>Vence ${fmt(b.due)}</small>
+            </div>
+            <strong>${money(b.amount)}</strong>
+          </div>`, "No tienes facturas pendientes.");
+
+        out("debtlist", d.debts, x => `
+          <div class="item">
+            <div>
+              <strong>${safe(x.name)}</strong>
+              <small>Interés ${x.rate || 0}% mensual · Cuota ${money(x.installment || 0)} · Vence ${fmt(x.due)}</small>
+              <div class="actions">
+                <button data-pay-d="${x.id}">Abonar</button>
+                <button class="secondary" data-edit-d="${x.id}">Editar</button>
+                <button class="danger" data-del-d="${x.id}">Eliminar</button>
+              </div>
+            </div>
+            <strong>${money(x.amount)}</strong>
+          </div>`);
+
+        out("goallist", d.goals, g => {
+          let p = Math.min(100, Math.round(g.saved / g.target * 100));
+          return `
+            <div class="item">
+              <div style="flex:1">
+                <strong>${safe(g.name)}</strong>
+                <small>${money(g.saved)} de ${money(g.target)} · Falta ${money(Math.max(0, g.target - g.saved))}</small>
+                <div class="progress"><span style="width:${p}%"></span></div>
+                <div class="actions">
+                  <button data-add-g="${g.id}">Agregar ahorro</button>
+                  <button class="secondary" data-edit-g="${g.id}">Editar</button>
+                  <button class="danger" data-del-g="${g.id}">Eliminar</button>
+                </div>
+              </div>
+              <strong>${p}%</strong>
+            </div>`;
+        });
+
+        out("houselist", d.house, h => `
+          <div class="item">
+            <div>
+              <strong>${safe(h.name)}</strong>
+              <small>${fmt(h.date)} · Total ${money(h.amount)} · Tu parte ${money(h.amount * h.split / 100)} · Pagaste ${money(h.paid)}</small>
+              <div class="actions">
+                <button class="secondary" data-edit-h="${h.id}">Editar</button>
+                <button class="danger" data-del-h="${h.id}">Eliminar</button>
+              </div>
+            </div>
+          </div>`);
+
+        let r = total($("rm").value || month);
+        $("ri").textContent = money(r.i);
+        $("re").textContent = money(r.e);
+        $("rb").textContent = money(r.i - r.e);
+        $("rc").textContent = r.a.length;
+        
+        let cats = {};
+        r.a.filter(m => m.type === "expense").forEach(m => cats[m.cat] = (cats[m.cat] || 0) + m.amount);
+        
+        out("catsreport", Object.entries(cats).sort((a, b) => b[1] - a[1]), x => `
+          <div class="item">
+            <strong>${safe(x[0])}</strong>
+            <strong>${money(x[1])}</strong>
+          </div>`);
+
+        chart();
+
+        out("auditlist", d.audit.slice(0, 100), a => `
+          <div class="item">
+            <div>
+              <strong>${safe(a.action)} · ${safe(a.entity)}</strong>
+              <small>${new Date(a.at).toLocaleString("es-CO")}<br>${safe(a.details)}${a.reason ? "<br>Motivo: " + safe(a.reason) : ""}</small>
+            </div>
+          </div>`);
+      }
+
+      function chart() {
+        let c = $("chart"), x = c.getContext("2d"), w = c.width, h = c.height;
+        x.clearRect(0, 0, w, h);
+        
+        let ms = [];
+        for (let i = 5; i >= 0; i--) {
+          let z = new Date(today.getFullYear(), today.getMonth() - i, 1);
+          ms.push(z.getFullYear() + "-" + String(z.getMonth() + 1).padStart(2, "0"));
+        }
+        
+        let vals = ms.map(total), max = Math.max(1, ...vals.flatMap(t => [t.i, t.e])), slot = (w - 60) / 6;
+        x.font = "12px system-ui";
+        
+        vals.forEach((t, i) => {
+          let xx = 40 + i * slot;
+          x.fillStyle = "#13865b";
+          x.fillRect(xx, h - 32 - (h - 60) * t.i / max, slot * .27, (h - 60) * t.i / max);
+          x.fillStyle = "#c83d4b";
+          x.fillRect(xx + slot * .31, h - 32 - (h - 60) * t.e / max, slot * .27, (h - 60) * t.e / max);
+          x.fillStyle = "#687386";
+          x.fillText(ms[i].slice(5), xx, h - 10);
+        });
+      }
+
+      function reset(form) {
+        $(form).reset();
+        $(form).querySelectorAll('[type=hidden]').forEach(x => x.value = "");
+      }
+
+      function view(id) {
+        document.querySelectorAll("[data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === id));
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === id));
+      }
+
+      document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => view(b.dataset.tab));
+      
+      $("qi").onclick = () => { view("moves"); $("type").value = "income"; $("desc").focus(); };
+      $("qe").onclick = () => { view("moves"); $("type").value = "expense"; $("desc").focus(); };
+
+      // EVENTOS DE FORMULARIOS
+      $("mf").onsubmit = e => {
+        e.preventDefault();
+        let id = $("mid").value, old = d.moves.find(x => x.id === id), amount = Number($("amount").value);
+        if (!Number.isSafeInteger(amount) || amount <= 0) return alert("Valor entero no válido.");
+        if (!d.accounts.length) return alert("Crea una cuenta primero.");
+        if (old && !$("reason").value.trim()) return alert("Escribe el motivo de la edición.");
+        
+        let m = {
+          id: id || uid(),
+          type: $("type").value,
+          date: $("date").value,
+          desc: $("desc").value.trim(),
+          amount,
+          cat: $("cat").value,
+          account: $("accsel").value,
+          note: $("note").value.trim(),
+          created: old?.created || now()
+        };
+
+        if (old) {
+          d.moves = d.moves.map(x => x.id === id ? m : x);
+          log("Edición", "Movimiento", `${old.desc} ${money(old.amount)} → ${m.desc} ${money(m.amount)}`, $("reason").value.trim());
+        } else {
+          d.moves.push(m);
+          log("Alta", "Movimiento", `${m.desc} · ${money(amount)}`);
+        }
+        save();
+        reset("mf");
+        $("date").value = iso(new Date());
+        $("msave").textContent = "Guardar movimiento";
+        $("mcancel").classList.add("hidden");
+      };
+
+      $("mcancel").onclick = () => {
+        reset("mf");
+        $("date").value = iso(new Date());
+        $("msave").textContent = "Guardar movimiento";
+        $("mcancel").classList.add("hidden");
+      };
+
+      $("af").onsubmit = e => {
+        e.preventDefault();
+        let id = $("aid").value, old = d.accounts.find(a => a.id === id),
+            a = { id: id || uid(), name: $("aname").value.trim(), type: $("atype").value, opening: Number($("opening").value) || 0 };
+        if (old) d.accounts = d.accounts.map(x => x.id === id ? a : x);
+        else d.accounts.push(a);
+        log(old ? "Edición" : "Alta", "Cuenta", a.name);
+        save();
+        reset("af");
+      };
+
+      $("tf").onsubmit = e => {
+        e.preventDefault();
+        let from = $("from").value, to = $("to").value, amount = Number($("ta").value),
+            a = d.accounts.find(x => x.id === from), b = d.accounts.find(x => x.id === to);
+        if (!a || !b || from === to) return alert("Elige dos cuentas diferentes.");
+        if (!Number.isSafeInteger(amount) || amount <= 0) return alert("Valor no válido.");
+        if (bal(a) < amount && !confirm("El saldo parece insuficiente. ¿Registrar transferencia?")) return;
+        
+        d.transfers.push({ id: uid(), from, to, fn: a.name, tn: b.name, amount, date: $("td").value });
+        log("Transferencia", "Cuentas", `${a.name} → ${b.name}: ${money(amount)}`);
+        save();
+        e.target.reset();
+        $("td").value = iso(new Date());
+      };
+
+      $("bf").onsubmit = e => {
+        e.preventDefault();
+        let id = $("bid").value, b = { id: id || uid(), cat: $("bc").value, limit: Number($("bl").value) };
+        if (!Number.isSafeInteger(b.limit) || b.limit <= 0) return alert("Límite inválido.");
+        if (id) d.budgets = d.budgets.map(x => x.id === id ? b : x);
+        else d.budgets.push(b);
+        log(id ? "Edición" : "Alta", "Presupuesto", `${b.cat}: ${money(b.limit)}`);
+        save();
+        reset("bf");
+      };
+
+      $("billf").onsubmit = e => {
+        e.preventDefault();
+        let id = $("billid").value, old = d.bills.find(x => x.id === id),
+            b = { id: id || uid(), name: $("bn").value.trim(), amount: Number($("ba").value), due: $("bd").value, cat: $("bcat").value, repeat: $("br").value, paid: old?.paid || false };
+        if (!Number.isSafeInteger(b.amount) || b.amount <= 0) return alert("Valor inválido.");
+        if (id) d.bills = d.bills.map(x => x.id === id ? b : x);
+        else d.bills.push(b);
+        log(id ? "Edición" : "Alta", "Factura", b.name);
+        save();
+        reset("billf");
+      };
+
+      $("df").onsubmit = e => {
+        e.preventDefault();
+        let id = $("did").value,
+            x = { id: id || uid(), name: $("dn").value.trim(), amount: Number($("da").value), rate: Number($("dr").value) || 0, installment: Number($("di").value) || 0, due: $("dd").value };
+        if (!Number.isSafeInteger(x.amount) || x.amount <= 0) return alert("Saldo inválido.");
+        if (id) d.debts = d.debts.map(z => z.id === id ? x : z);
+        else d.debts.push(x);
+        log(id ? "Edición" : "Alta", "Deuda", `${x.name}: ${money(x.amount)}`);
+        save();
+        reset("df");
+      };
+
+      $("gf").onsubmit = e => {
+        e.preventDefault();
+        let id = $("gid").value,
+            g = { id: id || uid(), name: $("gn").value.trim(), target: Number($("gt").value), saved: Number($("gs").value) || 0, date: $("gd").value };
+        if (!Number.isSafeInteger(g.target) || g.target <= 0 || !Number.isSafeInteger(g.saved) || g.saved < 0) return alert("Revisa los valores.");
+        if (id) d.goals = d.goals.map(x => x.id === id ? g : x);
+        else d.goals.push(g);
+        log(id ? "Edición" : "Alta", "Meta", g.name);
+        save();
+        reset("gf");
+      };
+
+      $("hf").onsubmit = e => {
+        e.preventDefault();
+        let id = $("hid").value,
+            h = { id: id || uid(), name: $("hn").value.trim(), amount: Number($("ha").value), paid: Number($("hp").value), split: Number($("hs").value), date: $("hd").value };
+        if (!Number.isSafeInteger(h.amount) || h.amount <= 0 || !Number.isSafeInteger(h.paid) || h.paid < 0) return alert("Valores inválidos.");
+        if (id) d.house = d.house.map(x => x.id === id ? h : x);
+        else d.house.push(h);
+        log(id ? "Edición" : "Alta", "Hogar", h.name);
+        save();
+        reset("hf");
+        $("hd").value = iso(new Date());
+      };
+
+      // MANEJO DE CLICS GLOBALES (EDICIÓN Y ELIMINACIÓN)
+      document.addEventListener("click", e => {
+        let b = e.target.closest("button");
+        if (!b) return;
+        const find = (arr, id) => arr.find(x => x.id === id);
+
+        if (b.dataset.editM) {
+          let m = find(d.moves, b.dataset.editM);
+          view("moves");
+          $("mid").value = m.id;
+          for (let [id, v] of Object.entries({ type: m.type, date: m.date, desc: m.desc, amount: m.amount, cat: m.cat, accsel: m.account, note: m.note || "", reason: "" }))
+            $(id).value = v;
+          $("msave").textContent = "Guardar cambios";
+          $("mcancel").classList.remove("hidden");
+        }
+        
+        if (b.dataset.delM) {
+          let m = find(d.moves, b.dataset.delM), r = prompt("Motivo obligatorio para eliminar:");
+          if (r === null) return;
+          if (!r.trim()) return alert("Debes escribir un motivo.");
+          if (confirm(`¿Eliminar ${m.desc} (${money(m.amount)})?`)) {
+            d.moves = d.moves.filter(x => x.id !== m.id);
+            log("Eliminación", "Movimiento", m.desc, r.trim());
+            save();
+          }
+        }
+        
+        if (b.dataset.editA) {
+          let a = find(d.accounts, b.dataset.editA);
+          $("aid").value = a.id;
+          $("aname").value = a.name;
+          $("atype").value = a.type;
+          $("opening").value = a.opening;
+          view("accounts");
+        }
+        
+        if (b.dataset.delA) {
+          let a = find(d.accounts, b.dataset.delA);
+          if (d.moves.some(m => m.account === a.id) || d.transfers.some(t => t.from === a.id || t.to === a.id))
+            return alert("No puedes eliminar una cuenta con movimientos o transferencias.");
+          if (confirm("¿Eliminar cuenta?")) {
+            d.accounts = d.accounts.filter(x => x.id !== a.id);
+            log("Eliminación", "Cuenta", a.name);
+            save();
+          }
+        }
+        
+        if (b.dataset.editB) {
+          let x = find(d.budgets, b.dataset.editB);
+          $("bid").value = x.id;
+          $("bc").value = x.cat;
+          $("bl").value = x.limit;
+          view("budgets");
+        }
+
+        if (b.dataset.delB && confirm("¿Eliminar presupuesto?")) {
+          d.budgets = d.budgets.filter(x => x.id !== b.dataset.delB);
+          log("Eliminación", "Presupuesto", b.dataset.delB);
+          save();
+        }
+
+        if (b.dataset.editBill) {
+          let x = find(d.bills, b.dataset.editBill);
+          $("billid").value = x.id;
+          $("bn").value = x.name;
+          $("ba").value = x.amount;
+          $("bd").value = x.due;
+          $("bcat").value = x.cat;
+          $("br").value = x.repeat;
+          view("bills");
+        }
+
+        if (b.dataset.delBill && confirm("¿Eliminar factura?")) {
+          d.bills = d.bills.filter(x => x.id !== b.dataset.delBill);
+          log("Eliminación", "Factura", b.dataset.delBill);
+          save();
+        }
+
+        if (b.dataset.payB) {
+          let x = find(d.bills, b.dataset.payB);
+          x.paid = true;
+          log("Pago", "Factura", x.name);
+          save();
+        }
+
+        if (b.dataset.editD) {
+          let x = find(d.debts, b.dataset.editD);
+          $("did").value = x.id;
+          $("dn").value = x.name;
+          $("da").value = x.amount;
+          $("dr").value = x.rate;
+          $("di").value = x.installment;
+          $("dd").value = x.due;
+          view("debts");
+        }
+
+        if (b.dataset.delD && confirm("¿Eliminar deuda?")) {
+          d.debts = d.debts.filter(x => x.id !== b.dataset.delD);
+          log("Eliminación", "Deuda", b.dataset.delD);
+          save();
+        }
+
+        if (b.dataset.payD) {
+          let x = find(d.debts, b.dataset.payD), v = Number(prompt(`Abono a ${x.name} (Saldo actual: ${money(x.amount)}):`));
+          if (v > 0 && v <= x.amount) {
+            x.amount -= v;
+            log("Abono", "Deuda", `${x.name}: -${money(v)}`);
+            save();
+          } else if (v > x.amount) {
+            alert("El abono no puede superar el saldo pendiente.");
+          }
+        }
+
+        if (b.dataset.editG) {
+          let x = find(d.goals, b.dataset.editG);
+          $("gid").value = x.id;
+          $("gn").value = x.name;
+          $("gt").value = x.target;
+          $("gs").value = x.saved;
+          $("gd").value = x.date;
+          view("goals");
+        }
+
+        if (b.dataset.delG && confirm("¿Eliminar meta?")) {
+          d.goals = d.goals.filter(x => x.id !== b.dataset.delG);
+          log("Eliminación", "Meta", b.dataset.delG);
+          save();
+        }
+
+        if (b.dataset.addG) {
+          let x = find(d.goals, b.dataset.addG), v = Number(prompt(`Agregar ahorro a ${x.name}:`));
+          if (v > 0) {
+            x.saved += v;
+            log("Ahorro", "Meta", `${x.name}: +${money(v)}`);
+            save();
+          }
+        }
+
+        if (b.dataset.editH) {
+          let x = find(d.house, b.dataset.editH);
+          $("hid").value = x.id;
+          $("hn").value = x.name;
+          $("ha").value = x.amount;
+          $("hp").value = x.paid;
+          $("hs").value = x.split;
+          $("hd").value = x.date;
+          view("house");
+        }
+
+        if (b.dataset.delH && confirm("¿Eliminar gasto del hogar?")) {
+          d.house = d.house.filter(x => x.id !== b.dataset.delH);
+          log("Eliminación", "Hogar", b.dataset.delH);
+          save();
+        }
+      });
+
+      // BOTONES DE CONFIGURACIÓN Y TEMA
+      $("theme").onclick = () => {
+        document.body.classList.toggle("dark");
+      };
+
+      $("export").onclick = () => {
+        let blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }),
+            url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url;
+        a.download = `control_financiero_${iso(today)}.json`;
+        a.click();
+      };
+
+      $("csv").onclick = () => {
+        let csv = "ID,Tipo,Fecha,Descripción,Valor,Categoría,Cuenta,Nota\n" +
+          d.moves.map(m => `"${m.id}","${m.type}","${m.date}","${m.desc.replace(/"/g, '""')}","${m.amount}","${m.cat}","${m.account}","${(m.note || "").replace(/"/g, '""')}"`).join("\n");
+        let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+            url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url;
+        a.download = `movimientos_${iso(today)}.csv`;
+        a.click();
+      };
+
+      $("import").onchange = e => {
+        let file = e.target.files[0];
+        if (!file) return;
+        let reader = new FileReader();
+        reader.onload = event => {
+          try {
+            let parsed = JSON.parse(event.target.result);
+            if (confirm("¿Reemplazar los datos actuales con la copia importada?")) {
+              d = parsed;
+              save();
+              alert("Datos restaurados correctamente.");
+            }
+          } catch (err) {
+            alert("El archivo no es un JSON válido.");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      $("reset").onclick = () => {
+        if (confirm("¿Estás completamente seguro de borrar todos los datos? Esta acción no se puede deshacer.")) {
+          localStorage.removeItem(K);
+          location.reload();
+        }
+      };
+
+      // FILTROS Y VALORES INICIALES EN FORMULARIOS
+      $("ft").onchange = render;
+      $("fm").onchange = render;
+      $("fs").oninput = render;
+      $("rm").onchange = render;
+
+      $("date").value = iso(today);
+      $("td").value = iso(today);
+      $("hd").value = iso(today);
+      $("rm").value = month;
+      $("fm").value = month;
+
+      render();
+    })();
+  </script>
+</body>
+</html>
+
+```
