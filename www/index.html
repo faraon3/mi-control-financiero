@@ -2214,7 +2214,10 @@ function openGoalForm(editId=null){
     const id=$("goalId").value;
     const ng={id:id||uid(),name:$("goalName").value.trim(),target:Number($("goalTarget").value),
       saved:Number($("goalSaved").value)||0,date:$("goalDate").value};
-    if(!Number.isSafeInteger(ng.target)||ng.target<=0){toast("Objetivo inválido");return}
+    if(!ng.name){toast("Escribe el nombre de la meta");return}
+    if(!Number.isSafeInteger(ng.target)||ng.target<=0){toast("El objetivo debe ser un valor entero en COP mayor que cero");return}
+    if(!Number.isSafeInteger(ng.saved)||ng.saved<0){toast("El valor ahorrado debe ser un entero en COP igual o mayor que cero");return}
+    if(ng.date && (Number.isNaN(new Date(ng.date+"T12:00:00").getTime())||ng.date<iso(today))){toast("La fecha objetivo no puede estar en el pasado");return}
     if(id)d.goals=d.goals.map(x=>x.id===id?ng:x);else d.goals.push(ng);
     log(id?"Edición":"Alta","Meta",ng.name);save();closeSheet();toast(g?"Actualizada":"Guardada");
   };
@@ -2271,8 +2274,11 @@ function openDebtForm(editId=null,defaultKind="personal"){
     const nd={id:id||uid(),name:$("debtName").value.trim(),amount:Number($("debtAmount").value),
       rate:Number($("debtRate").value)||0,installment:Number($("debtInstallment").value)||0,due:$("debtDue").value,
       kind,terms,paidTerms,creditLimit,paymentDay};
-    if(!Number.isSafeInteger(nd.amount)||nd.amount<=0){toast("Saldo pendiente inválido");return}
-    if(!Number.isSafeInteger(nd.installment)||nd.installment<0){toast("La cuota mensual no es válida");return}
+    if(!nd.name){toast("Escribe el nombre de la obligación");return}
+    if(!Number.isSafeInteger(nd.amount)||nd.amount<=0){toast("El saldo pendiente debe ser un entero en COP mayor que cero");return}
+    if(!Number.isFinite(nd.rate)||nd.rate<0||nd.rate>100){toast("El interés mensual debe estar entre 0 y 100 %");return}
+    if(!Number.isSafeInteger(nd.installment)||nd.installment<0){toast("La cuota mensual debe ser un entero en COP igual o mayor que cero");return}
+    if(!Number.isSafeInteger(creditLimit)||creditLimit<0){toast("El cupo de la tarjeta debe ser un entero en COP igual o mayor que cero");return}
     if(!Number.isSafeInteger(terms)||terms<0||!Number.isSafeInteger(paidTerms)||paidTerms<0|| (terms>0&&paidTerms>terms)){
       toast("Revisa el total de cuotas y las cuotas pagadas");return
     }
