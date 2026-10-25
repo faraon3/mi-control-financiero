@@ -1826,7 +1826,7 @@ function renderPlan(){
   },"Sin gastos compartidos");
 }
 
-async document.addEventListener("click",e=>{
+document.addEventListener("click",e=>{
  const edit=e.target.closest("[data-house-edit]");if(edit){openHouseForm(edit.dataset.houseEdit);return}
  const payback=e.target.closest("[data-house-payback]");if(payback){openHouseRepayment(payback.dataset.housePayback);return}
 });
@@ -1842,7 +1842,7 @@ function openHouseRepayment(id){
   log("Abono hogar","Hogar",h.name+" · "+money(amount));save();closeSheet();toast("Abono registrado");
  };
 }
-function shareHouseSummary(){
+async function shareHouseSummary(){
   const monthInput=$("houseShareMonth");
   const selectedMonth=monthInput?.value||iso(today).slice(0,7);
   const entries=(d.house||[]).filter(h=>String(h.date||"").slice(0,7)===selectedMonth)
