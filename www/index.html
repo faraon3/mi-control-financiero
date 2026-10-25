@@ -695,6 +695,30 @@ canvas{width:100%;height:200px;max-width:100%}
   border-color:var(--primary);
   color:var(--on-primary-container);
 }
+.plan-seg button{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:9px;
+  text-align:left;
+}
+.plan-tab-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 30px;
+  width:30px;height:30px;
+  border-radius:10px;
+  background:var(--surface-container-high);
+  font-size:20px;
+  line-height:1;
+  font-weight:700;
+}
+.plan-seg button.active .plan-tab-icon{
+  background:var(--primary);
+  color:var(--on-primary);
+}
+.plan-seg button span:last-child{overflow-wrap:anywhere}
 
 /* Kebab menu (posicionado y clampeado al viewport) */
 .kebab-menu{
@@ -1026,12 +1050,12 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
   <section class="view" id="plan">
     <div class="section-head" style="margin-top:8px"><h2>Plan</h2></div>
 
-    <div class="seg" id="planSeg">
-      <button class="active" data-plan="budgets">Presupuestos</button>
-      <button data-plan="debts">Deudas</button>
-      <button data-plan="goals">Metas</button>
-      <button data-plan="accounts">Cuentas</button>
-      <button data-plan="house">Hogar</button>
+    <div class="seg plan-seg" id="planSeg">
+      <button class="active" data-plan="budgets"><span class="plan-tab-icon" aria-hidden="true">▤</span><span>Presupuestos</span></button>
+      <button data-plan="debts"><span class="plan-tab-icon" aria-hidden="true">▣</span><span>Deudas</span></button>
+      <button data-plan="goals"><span class="plan-tab-icon" aria-hidden="true">◎</span><span>Metas</span></button>
+      <button data-plan="accounts"><span class="plan-tab-icon" aria-hidden="true">▱</span><span>Cuentas</span></button>
+      <button data-plan="house"><span class="plan-tab-icon" aria-hidden="true">⌂</span><span>Hogar</span></button>
     </div>
 
     <div class="plan-view active" id="planBudgets">
@@ -1044,8 +1068,8 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
       </div>
       <div class="card" style="margin-bottom:12px">
         <div class="hint">Cuotas con vencimiento este mes</div>
-        <div id="debtDueSummary" class="value" style="font-size:22px;font-weight:750;margin-top:6px">
-      <div class="hint" id="creditCardSummary" style="margin:8px 0"></div>$ 0</div>
+        <div id="debtDueSummary" class="value" style="font-size:22px;font-weight:750;margin-top:6px">$ 0</div>
+        <div class="hint" id="creditCardSummary" style="margin:8px 0"></div>
         <div id="debtDueCount" class="s">Sin cuotas pendientes este mes</div>
       </div>
       <div class="card"><div id="debtlist" class="list"></div></div>
