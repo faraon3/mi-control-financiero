@@ -1278,6 +1278,9 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
     <div class="card" style="margin-top:12px">
       <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Respaldo</div>
       <button class="btn secondary" id="export" style="margin-top:12px">Exportar JSON</button>
+      <button class="btn ghost" id="exportEncrypted" style="margin-top:8px">Exportar copia cifrada con contraseña</button>
+      <button class="btn ghost" id="importEncryptedBtn" style="margin-top:8px">Importar copia cifrada</button>
+      <input id="importEncrypted" type="file" accept=".mcf,.json,application/json" hidden>
       <button class="btn ghost" id="csv" style="margin-top:8px">Exportar CSV (todos los datos)</button>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
         <div style="font-weight:700">Revisión de datos</div>
@@ -2660,7 +2663,8 @@ function applyDebtPayment(id,v,accountId,paidDate){
     // Así el saldo de la cuenta refleja el pago y no se pierde el historial del movimiento.
     debt.amount=Number(debt.amount)-v;
     if(Number(debt.installment||0)>0 && v>=Number(debt.installment||0) && Number(debt.terms||0)>Number(debt.paidTerms||0)){
-      debt.paidTerms=Number(debt.paidTerms||0)+1;
+      const coveredTerms=Math.floor(v/Number(debt.installment||0));
+      debt.paidTerms=Math.min(Number(debt.terms||0),Number(debt.paidTerms||0)+coveredTerms);
     }
     // Si se abonó al menos una cuota mensual, avanza el próximo vencimiento un mes.
     // Se limita al último día del mes para evitar saltos al pagar el día 29, 30 o 31.
@@ -2924,6 +2928,47 @@ $("export").onclick=()=>{
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   a.download=`control_financiero_${iso(today)}.json`;a.click();
   toast("Copia exportada");
+};
+async function deriveBackupKey(password,salt){
+  const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:310000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+function bytesToB64(bytes){let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary)}
+function b64ToBytes(value){const binary=atob(value);return Uint8Array.from(binary,c=>c.charCodeAt(0))}
+$("exportEncrypted").onclick=async()=>{
+  const password=prompt("Crea una contraseña para cifrar la copia. Guárdala: no se puede recuperar si la olvidas.");
+  if(password===null)return;
+  if(password.length<10){toast("Usa una contraseña de al menos 10 caracteres");return}
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const key=await deriveBackupKey(password,salt);
+    const plain=new TextEncoder().encode(JSON.stringify(d));
+    const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,plain);
+    const payload={format:"mcf-encrypted-backup-v1",kdf:"PBKDF2-SHA-256",iterations:310000,cipher:"AES-256-GCM",salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(new Uint8Array(cipher))};
+    const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-control-financiero-cifrado-"+iso(today)+".mcf";a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast("Copia cifrada exportada");
+  }catch(err){console.error(err);toast("No se pudo cifrar la copia")}
+};
+$("importEncryptedBtn").onclick=()=>$("importEncrypted").click();
+$("importEncrypted").onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{
+    const payload=JSON.parse(await file.text());
+    if(payload.format!=="mcf-encrypted-backup-v1"||payload.kdf!=="PBKDF2-SHA-256"||payload.cipher!=="AES-256-GCM")throw new Error("Formato no compatible");
+    const password=prompt("Ingresa la contraseña usada al crear esta copia cifrada.");
+    if(password===null)return;
+    const key=await deriveBackupKey(password,b64ToBytes(payload.salt));
+    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64ToBytes(payload.iv)},key,b64ToBytes(payload.data));
+    const parsed=JSON.parse(new TextDecoder().decode(plain));
+    const required=["moves","accounts","transfers","budgets","bills","debts","goals","house","audit"];
+    if(!parsed||typeof parsed!=="object"||required.some(k=>!Array.isArray(parsed[k])))throw new Error("Faltan secciones");
+    if(parsed.moves.some(m=>!m||!m.id||!["income","expense"].includes(m.type)||!Number.isSafeInteger(Number(m.amount))||Number(m.amount)<=0)||
+       parsed.accounts.some(a=>!a||!a.id||!String(a.name||"").trim()||!Number.isFinite(Number(a.opening||0))))throw new Error("Hay registros inválidos");
+    m3Confirm({title:"Restaurar copia cifrada",message:"Se reemplazarán los datos actuales por el contenido de esta copia. Exporta primero otra copia si necesitas conservar los datos actuales.",confirmLabel:"Restaurar",danger:true},()=>{
+      d=parsed;d.recurring=Array.isArray(d.recurring)?d.recurring:[];save();closeSheet();render();toast("Copia cifrada restaurada");e.target.value="";
+    });
+  }catch(err){console.error(err);toast("No se pudo descifrar la copia. Verifica la contraseña y el archivo.")}
 };
 function runIntegrityCheck(){
   const issues=[];
