@@ -2362,7 +2362,11 @@ function openHouseForm(editId=null){
     const id=$("houseId").value;
     const nh={id:id||uid(),name:$("houseName").value.trim(),amount:Number($("houseAmount").value),
       paid:Number($("housePaid").value),split:Number($("houseSplit").value),date:$("houseDate").value};
-    if(!Number.isSafeInteger(nh.amount)||nh.amount<=0){toast("Valor inválido");return}
+    if(!Number.isSafeInteger(nh.amount)||nh.amount<=0){toast("El total debe ser un valor entero en COP mayor que cero");return}
+    if(!Number.isSafeInteger(nh.paid)||nh.paid<0||nh.paid>nh.amount){toast("El valor que pagaste debe ser un entero entre $0 y el total del gasto");return}
+    if(!Number.isFinite(nh.split)||nh.split<0||nh.split>100){toast("El porcentaje de tu parte no es válido");return}
+    if(!nh.name){toast("Escribe el concepto del gasto");return}
+    if(!nh.date||Number.isNaN(new Date(nh.date+"T12:00:00").getTime())||nh.date>iso(today)){toast("Revisa la fecha del gasto");return}
     if(id)d.house=d.house.map(x=>x.id===id?nh:x);else d.house.push(nh);
     log(id?"Edición":"Alta","Hogar",nh.name);save();closeSheet();toast(h?"Actualizado":"Guardado");
   };
