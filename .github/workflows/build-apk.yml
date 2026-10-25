@@ -1,4 +1,3 @@
-
 name: Construir APK Android
 
 on:
@@ -14,7 +13,6 @@ jobs:
   build:
     name: Compilar aplicación Android
     runs-on: ubuntu-latest
-
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
@@ -79,15 +77,62 @@ jobs:
       - name: Sincronizar aplicación
         run: npx cap sync android
 
-      - name: Compilar APK
+      - name: Asignar número de compilación
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          text = p.read_text(encoding="utf-8")
+          text, count = re.subn(r'versionCode\s+\d+', 'versionCode ' + os.environ["BUILD_NUMBER"], text, count=1)
+          if count != 1:
+              raise SystemExit("No se pudo asignar versionCode en android/app/build.gradle")
+          p.write_text(text, encoding="utf-8")
+          print("versionCode asignado:", os.environ["BUILD_NUMBER"])
+          PY
+
+      - name: Compilar APK de depuración y versión release
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug assembleRelease
 
-      - name: Publicar APK
+      - name: Firmar APK release si están configurados los secretos
+        id: sign
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "No se configuró llave de firma. Se publicará solo el APK debug para pruebas."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mcf-release.keystore"
+          UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED="$RUNNER_TEMP/app-release-aligned.apk"
+          SIGNED="android/app/build/outputs/apk/release/mi-control-financiero-release.apk"
+          test -f "$UNSIGNED"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/mcf-release.keystore" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" --key-pass "pass:$ANDROID_KEY_PASSWORD" --out "$SIGNED" "$ALIGNED"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$SIGNED"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar APK debug para pruebas
         uses: actions/upload-artifact@v4
         with:
-          name: mi-control-financiero-apk
+          name: mi-control-financiero-apk-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Publicar APK release firmado
+        if: steps.sign.outputs.signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mi-control-financiero-apk-release-firmado
+          path: android/app/build/outputs/apk/release/mi-control-financiero-release.apk
           if-no-files-found: error
