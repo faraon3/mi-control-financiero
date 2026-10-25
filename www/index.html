@@ -3059,6 +3059,10 @@ function runSmokeTests(){
   test("Hogar: si pagas todo, calcula lo que ella debe",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[]})===500000);
   test("Hogar: los abonos reducen el saldo",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[{amount:200000}]})===300000);
   test("Hogar: si ella paga todo, calcula lo que tú debes",houseSettled({amount:1000000,myShare:500000,paidByMe:0,repayments:[]})===-500000);
+  test("Recurrencia mensual conserva el fin de mes",advanceRecurrence("2026-01-31","monthly")==="2026-02-28");
+  test("Recurrencia quincenal avanza 15 días",advanceRecurrence("2026-01-01","biweekly")==="2026-01-16");
+  test("CSV respeta comas dentro de comillas",parseCsvText('"Fecha","Descripción"\n"2026-01-01","Mercado, tienda"',",").length===2);
+  test("Respaldo cifrado disponible",!!$("exportEncrypted")&&!!$("importEncryptedBtn"));
   const passed=results.filter(x=>x.ok).length;
   const out=$("smokeTestReport");
   if(out){
