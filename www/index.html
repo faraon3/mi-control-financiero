@@ -1374,6 +1374,11 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
         <div id="releaseCheckReport" style="margin-top:10px"></div>
       </div>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
+        <div style="font-weight:700">Guía de inicio</div>
+        <div class="hint" style="margin-top:5px">Aprende lo básico y vuelve a consultar los pasos cuando lo necesites.</div>
+        <button class="btn secondary" id="openGettingStarted" style="margin-top:10px">Ver guía de uso</button>
+      </div>
+      <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
         <div style="font-weight:700">Estado de vencimientos</div>
         <div class="hint" style="margin-top:5px">Resumen local de facturas y cuotas vencidas o próximas. No sustituye las notificaciones del sistema.</div>
         <button class="btn secondary" id="refreshDueStatus" style="margin-top:10px">Actualizar vencimientos</button>
@@ -1425,28 +1430,28 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
 </main>
 
 <!-- ============ BOTTOM NAV ============ -->
-<nav class="bottom">
+<nav class="bottom" aria-label="Navegación principal">
   <div class="inner">
-    <button data-tab="home" class="active">
+    <button data-tab="home" class="active" aria-label="Inicio" aria-current="page">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
       <span class="label">Inicio</span>
     </button>
-    <button data-tab="moves">
+    <button data-tab="moves" aria-label="Movimientos">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/><path d="M17 7v8"/></svg></span>
       <span class="label">Movimientos</span>
     </button>
-    <button class="add" id="btnAdd">
+    <button class="add" id="btnAdd" aria-label="Crear un registro nuevo">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
       <span class="label">Crear</span>
     </button>
-    <button data-tab="plan">
+    <button data-tab="plan" aria-label="Organizar finanzas">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>
       <span class="label">Organizar</span>
     </button>
-    <button data-tab="reports">
+    <button data-tab="reports" aria-label="Análisis e informes">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span>
       <span class="label">Análisis</span>
@@ -1642,6 +1647,9 @@ function save(){
     }
     localStorage.setItem(K,JSON.stringify(d));
     render();
+    if(localStorage.getItem("mcf_reminders_enabled")==="1" && typeof scheduleDeviceReminders==="function"){
+      setTimeout(()=>scheduleDeviceReminders({requestPermission:false,quiet:true}),250);
+    }
   }catch(err){
     alert("No se pudo guardar. Exporta una copia de seguridad y libera espacio si el problema continúa.");
   }
@@ -2477,9 +2485,10 @@ function openMoveForm(type="expense",editId=null){
       <label>Fecha</label>
       <input id="moveDate" type="date" required value="${m?.date||iso(today)}">
       ${!m?`<label>Repetición</label><select id="moveRepeat"><option value="none">No repetir</option><option value="weekly">Cada semana</option><option value="biweekly">Cada quincena</option><option value="monthly">Cada mes</option><option value="yearly">Cada año</option></select><p class="hint">Los movimientos futuros se crearán al abrir la app después de su fecha.</p>`:""}
-      <label>Valor COP</label>
-      <input id="moveAmount" type="number" min="1" step="1" required value="${m?.amount||""}">
-      <label>Descripción</label>
+      <label for="moveAmount">Valor en pesos colombianos (COP)</label>
+      <input id="moveAmount" type="number" inputmode="numeric" min="1" step="1" required value="${m?.amount||""}" aria-describedby="moveAmountHelp">
+      <div class="hint" id="moveAmountHelp">Escribe solo números, sin puntos ni signos. <strong id="moveAmountFormatted" aria-live="polite">${m?money(m.amount):"Ej. $ 25.000"}</strong></div>
+      <label for="moveDesc">Descripción</label>
       <input id="moveDesc" maxlength="100" required value="${m?safe(m.desc):""}" placeholder="Mercado, salario…">
       <label>Categoría</label>
       <select id="moveCat">
@@ -2496,6 +2505,10 @@ function openMoveForm(type="expense",editId=null){
       <button class="btn" style="margin-top:20px">Guardar</button>
     </form>
   `);
+  const amountInput=$("moveAmount"),amountFormatted=$("moveAmountFormatted");
+  const updateAmountPreview=()=>{const v=Number(amountInput.value);amountFormatted.textContent=Number.isSafeInteger(v)&&v>0?money(v):"Ej. $ 25.000"};
+  amountInput.addEventListener("input",updateAmountPreview);
+  if(!m){setTimeout(()=>{amountInput.focus();if(type==="expense")amountInput.select()},80)}
   $("moveForm").onsubmit=e=>{
     e.preventDefault();
     const id=$("moveId").value,old=id?d.moves.find(x=>x.id===id):null;
@@ -3500,44 +3513,98 @@ function buildWeeklyPlan(){
   </div>`;
 }
 $("buildWeeklyPlan").onclick=()=>buildWeeklyPlan();
-async function scheduleDeviceReminders(){
+function reminderId(key){
+  let id=0;
+  for(let i=0;i<key.length;i++)id=(id*31+key.charCodeAt(i))%2000000000;
+  return Math.max(1,id);
+}
+async function scheduleDeviceReminders(options={}){
   const status=$("notificationStatus");
+  const requestPermission=options.requestPermission!==false;
+  const quiet=options.quiet===true;
   const plugin=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
   if(!plugin){
-    if(status)status.textContent="Las notificaciones programadas están disponibles en la APK Android; en la versión web solo se muestran avisos al abrirla.";
-    toast("Esta función requiere la APK Android actualizada");return;
+    if(status)status.textContent="Las notificaciones programadas requieren la APK Android. En la web, los avisos solo se actualizan al abrir la aplicación.";
+    if(!quiet)toast("Para programar avisos necesitas la APK Android");
+    return false;
   }
   try{
     let permission=await plugin.checkPermissions();
-    if(permission.display!=="granted")permission=await plugin.requestPermissions();
-    if(permission.display!=="granted"){toast("No se concedió permiso para notificaciones");return}
-    const pending=[];
+    if(permission.display!=="granted"&&requestPermission)permission=await plugin.requestPermissions();
+    if(permission.display!=="granted"){
+      if(status)status.textContent="Permiso no concedido. Activa las notificaciones en los ajustes de Android y vuelve a intentarlo.";
+      if(!quiet)toast("No se concedió permiso para notificaciones");
+      return false;
+    }
+    const pending=[],ownIds=new Set();
     const add=(key,title,body,when)=>{
-      const at=new Date(when);if(Number.isNaN(at.getTime()))return;
-      const nowDate=new Date();if(at<=nowDate)return;
-      let id=0;for(let i=0;i<key.length;i++)id=(id*31+key.charCodeAt(i))%2000000000;
-      pending.push({id:Math.max(1,id),title,body,schedule:{at:at,allowWhileIdle:true}});
+      const at=new Date(when);
+      if(Number.isNaN(at.getTime())||at<=new Date())return;
+      const id=reminderId(key);
+      if(ownIds.has(id))return;
+      ownIds.add(id);
+      pending.push({id,title,body,schedule:{at,allowWhileIdle:true}});
     };
-    const atHour=(date,days,offset=9)=>{
-      const d0=new Date(date+"T12:00:00");d0.setDate(d0.getDate()+days);d0.setHours(offset,0,0,0);return d0;
+    const atHour=(date,days,hour=9)=>{
+      const base=new Date(date+"T12:00:00");
+      if(Number.isNaN(base.getTime()))return new Date(NaN);
+      base.setDate(base.getDate()+days);base.setHours(hour,0,0,0);return base;
     };
-    const nowDate=new Date(),todayKey=iso(nowDate);
+    const todayKey=iso(new Date());
     d.bills.filter(b=>!b.paid&&b.due).forEach(b=>{
-      const due=new Date(b.due+"T09:00:00");
-      [-3,-1,0].forEach(days=>add("bill-"+b.id+"-"+days,"Recordatorio de factura",b.name+" · "+money(b.amount)+(days===0?" vence hoy":days<0?" vence en "+Math.abs(days)+" día(s)":" vence"),atHour(b.due,days)));
-      if(b.due<todayKey){for(let n=1;n<=7;n++)add("overdue-"+b.id+"-"+n,"Factura vencida",b.name+" · pendiente "+money(b.amount),atHour(todayKey,n));}
+      [-3,-1,0].forEach(days=>add("bill-"+b.id+"-"+days,"Recordatorio de factura",
+        b.name+" · "+money(b.amount)+(days===0?" vence hoy":days<0?" vence en "+Math.abs(days)+" día(s)":" vence"),atHour(b.due,days)));
+      if(b.due<todayKey){
+        // Programa 30 días por delante; al abrir la app se renueva la ventana hasta pagar.
+        for(let n=1;n<=30;n++)add("overdue-"+b.id+"-"+n,"Factura vencida",
+          b.name+" · pendiente "+money(b.amount),atHour(todayKey,n));
+      }
     });
     d.debts.filter(x=>Number(x.amount||0)>0&&x.due).forEach(x=>{
-      [-3,-1,0].forEach(days=>add("debt-"+x.id+"-"+days,"Recordatorio de deuda",x.name+" · cuota "+money(x.installment||0),atHour(x.due,days)));
-      if(x.due<todayKey){for(let n=1;n<=7;n++)add("debt-overdue-"+x.id+"-"+n,"Cuota vencida",x.name+" · revisa el pago",atHour(todayKey,n));}
+      [-3,-1,0].forEach(days=>add("debt-"+x.id+"-"+days,"Recordatorio de deuda",
+        x.name+" · cuota "+money(x.installment||0),atHour(x.due,days)));
+      if(x.due<todayKey){
+        for(let n=1;n<=30;n++)add("debt-overdue-"+x.id+"-"+n,"Cuota vencida",
+          x.name+" · revisa el pago",atHour(todayKey,n));
+      }
     });
-    await plugin.cancel({notifications:(await plugin.getPending()).notifications||[]});
+    // Cancela solo avisos que esta función programó; no toca notificaciones de otros módulos.
+    let previousIds=[];
+    try{previousIds=JSON.parse(localStorage.getItem("mcf_reminder_ids")||"[]")}catch(e){}
+    if(previousIds.length)await plugin.cancel({notifications:previousIds.map(id=>({id:Number(id)}))});
     if(pending.length)await plugin.schedule({notifications:pending});
-    if(status)status.textContent="Recordatorios programados: "+pending.length+". Revisa este panel después de registrar o pagar facturas para actualizar la programación.";
-    toast("Recordatorios actualizados");
-  }catch(err){console.error("No se pudieron programar recordatorios",err);if(status)status.textContent="No se pudieron programar. Verifica los permisos de notificaciones de Android.";toast("No se pudieron programar los recordatorios")}
+    localStorage.setItem("mcf_reminder_ids",JSON.stringify(Array.from(ownIds)));
+    localStorage.setItem("mcf_reminders_enabled","1");
+    if(status)status.textContent="Recordatorios activos: "+pending.length+" avisos programados. Las facturas y cuotas vencidas se programan por 30 días y se renuevan al abrir la app o guardar cambios.";
+    if(!quiet)toast("Recordatorios actualizados");
+    return true;
+  }catch(err){
+    console.error("No se pudieron programar recordatorios",err);
+    if(status)status.textContent="No se pudieron programar. Revisa el permiso de notificaciones y la configuración de batería de Android.";
+    if(!quiet)toast("No se pudieron programar los recordatorios");
+    return false;
+  }
 }
-$("enableNotifications").onclick=scheduleDeviceReminders;
+$("enableNotifications").onclick=()=>scheduleDeviceReminders({requestPermission:true});
+function showGettingStarted(){
+  openSheet(`<h3>Bienvenido a Mi Control Financiero</h3>
+    <p class="hint">Una guía corta para empezar. Tus datos se guardan en este dispositivo.</p>
+    <div class="card" style="margin-top:12px">
+      <strong>1. Crea una cuenta</strong><p class="hint">Registra efectivo, banco o billetera. Es necesaria para asociar cada ingreso y gasto.</p>
+      <strong>2. Registra movimientos</strong><p class="hint">Pulsa el botón Crear y elige Gasto o Ingreso. Escribe el valor en pesos sin puntos y revisa el valor formateado antes de guardar.</p>
+      <strong>3. Organiza pagos</strong><p class="hint">En Organizar registra facturas, fechas de vencimiento, deudas y metas de ahorro.</p>
+      <strong>4. Revisa tu dinero</strong><p class="hint">Inicio muestra el resumen; Análisis presenta informes y proyecciones.</p>
+      <strong>5. Activa recordatorios</strong><p class="hint">En esta sección de herramientas, activa los recordatorios y acepta el permiso de Android. Comprueba también que el sistema no restrinja la batería de la app.</p>
+      <strong>6. Protege tus datos</strong><p class="hint">Exporta una copia de seguridad periódicamente. El PIN bloquea la pantalla, pero no cifra por sí solo todos los datos locales.</p>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px"><input id="dontShowGuide" type="checkbox" style="width:20px;min-height:20px"> No mostrar al iniciar</label>
+    <button class="btn" id="closeGettingStarted" style="margin-top:12px">Entendido</button>`);
+  $("closeGettingStarted").onclick=()=>{
+    if($("dontShowGuide").checked)localStorage.setItem("mcf_onboarding_seen","1");
+    closeSheet();
+  };
+}
+$("openGettingStarted").onclick=showGettingStarted;
 function refreshDueStatus(){
   const out=$("dueStatusReport");
   if(!out)return;
@@ -3567,7 +3634,7 @@ $("refreshDueStatus").onclick=refreshDueStatus;
 function runReleaseCheck(){
   const out=$("releaseCheckReport");
   const checks=[
-    {name:"Secciones de datos principales",ok:!!d&&["moves","accounts","transfers","budgets","bills","debts","goals","house","audit"].every(k=>Array.isArray(d[k]))},
+    {name:"Secciones de datos principales",ok:!!d&&["moves","accounts","transfers","budgets","bills","debts","goals","house","audit","recurring"].every(k=>Array.isArray(d[k]))},
     {name:"Hay al menos una cuenta",ok:d.accounts.length>0,info:"Necesaria para registrar ingresos y gastos."},
     {name:"Saldos calculables",ok:d.accounts.every(a=>Number.isFinite(bal(a)))},
     {name:"Respaldo JSON disponible para exportar",ok:!!$("export")},
@@ -3827,6 +3894,18 @@ $("fm").value=month;
 
 processRecurringMoves();
 render();
+if(localStorage.getItem("mcf_onboarding_seen")!=="1")setTimeout(showGettingStarted,500);
+// Refresh dates and reminder windows when the app returns from background.
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&localStorage.getItem("mcf_reminders_enabled")==="1"){
+    scheduleDeviceReminders({requestPermission:false,quiet:true});
+  }
+});
+window.addEventListener("pageshow",()=>{
+  if(localStorage.getItem("mcf_reminders_enabled")==="1")scheduleDeviceReminders({requestPermission:false,quiet:true});
+});
+// Basic Android/browser back handling: close the sheet before navigating away.
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("sheet").classList.contains("open"))closeSheet()});
 })();
 </script>
 </body>
