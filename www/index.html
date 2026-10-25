@@ -1422,10 +1422,32 @@ document.querySelectorAll("#themeSeg button").forEach(b=>{
   else b.classList.remove("active");
 });
 
-let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[]};
+let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[],recurring:[]};
 try{let o=JSON.parse(localStorage.getItem(K)||"null");if(o)Object.keys(d).forEach(k=>d[k]=Array.isArray(o[k])?o[k]:[])}catch(e){}
 
 function log(a,e,det,r=""){d.audit.unshift({id:uid(),at:now(),action:a,entity:e,details:det,reason:r});d.audit=d.audit.slice(0,1000)}
+function advanceRecurrence(date,repeat){
+  const dt=new Date(date+"T12:00:00");
+  if(repeat==="weekly")dt.setDate(dt.getDate()+7);
+  else if(repeat==="biweekly")dt.setDate(dt.getDate()+15);
+  else if(repeat==="monthly"){const day=dt.getDate();dt.setDate(1);dt.setMonth(dt.getMonth()+1);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0,12).getDate()));}
+  else if(repeat==="yearly"){const month=dt.getMonth(),day=dt.getDate();dt.setDate(1);dt.setFullYear(dt.getFullYear()+1);dt.setMonth(month);dt.setDate(Math.min(day,new Date(dt.getFullYear(),month+1,0,12).getDate()));}
+  return iso(dt);
+}
+function processRecurringMoves(){
+  d.recurring=Array.isArray(d.recurring)?d.recurring:[];
+  const todayKey=iso(new Date());let changed=false;
+  d.recurring.forEach(rule=>{
+    let safety=0;
+    while(rule.active!==false&&rule.nextDate&&rule.nextDate<=todayKey&&safety<240){
+      if(!d.accounts.some(a=>a.id===rule.account)){rule.active=false;changed=true;break;}
+      const exists=d.moves.some(m=>m.recurringId===rule.id&&m.date===rule.nextDate);
+      if(!exists)d.moves.push({id:uid(),type:rule.type,date:rule.nextDate,desc:rule.desc,amount:Number(rule.amount),cat:rule.cat,account:rule.account,note:rule.note||"",recurringId:rule.id,created:now()});
+      rule.nextDate=advanceRecurrence(rule.nextDate,rule.repeat);changed=true;safety++;
+    }
+  });
+  if(changed)save();
+}
 function save(){
   try{
     // Conserva una copia previa de seguridad antes de sobrescribir los datos actuales.
@@ -2214,6 +2236,7 @@ function openMoveForm(type="expense",editId=null){
       <input type="hidden" id="moveType" value="${m?.type||type}">
       <label>Fecha</label>
       <input id="moveDate" type="date" required value="${m?.date||iso(today)}">
+      ${!m?`<label>Repetición</label><select id="moveRepeat"><option value="none">No repetir</option><option value="weekly">Cada semana</option><option value="biweekly">Cada quincena</option><option value="monthly">Cada mes</option><option value="yearly">Cada año</option></select><p class="hint">Los movimientos futuros se crearán al abrir la app después de su fecha.</p>`:""}
       <label>Valor COP</label>
       <input id="moveAmount" type="number" min="1" step="1" required value="${m?.amount||""}">
       <label>Descripción</label>
@@ -2252,8 +2275,16 @@ function openMoveForm(type="expense",editId=null){
       account:accountId,note:$("moveNote").value.trim(),
       created:old?.created||now()
     };
-    if(old){d.moves=d.moves.map(x=>x.id===id?nm:x);log("Edición","Movimiento",`${old.desc} → ${nm.desc}`,$("moveReason").value.trim())}
-    else{d.moves.push(nm);log("Alta","Movimiento",`${nm.desc} · ${money(amount)}`)}
+    if(old){d.moves=d.moves.map(x=>x.id===id?nm:x);log("Edición","Movimiento",old.desc+" → "+nm.desc,$("moveReason").value.trim())}
+    else{
+      d.moves.push(nm);
+      const repeat=$("moveRepeat")?.value||"none";
+      if(repeat!=="none"){
+        d.recurring=Array.isArray(d.recurring)?d.recurring:[];
+        d.recurring.push({id:uid(),type:nm.type,date:date,nextDate:advanceRecurrence(date,repeat),repeat,amount,desc,cat:nm.cat,account:accountId,note:nm.note,active:true,created:now()});
+      }
+      log("Alta","Movimiento",nm.desc+" · "+money(amount));
+    }
     save();closeSheet();toast(old?"Actualizado":"Guardado");
     if(!old&&nm.type==="income"&&nm.amount>0)setTimeout(()=>openDistributeSheet(nm),400);
   };
@@ -3289,6 +3320,7 @@ $("rm").onchange=renderReports;
 $("rm").value=month;
 $("fm").value=month;
 
+processRecurringMoves();
 render();
 })();
 </script>
