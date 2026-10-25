@@ -1832,16 +1832,26 @@ document.addEventListener("click",e=>{
 });
 function openHouseRepayment(id){
  const h=d.house.find(x=>x.id===id);if(!h){toast("No se encontró el gasto");return}
- const balance=houseSettled(h);if(balance<=0){toast("No hay saldo a tu favor pendiente en este gasto");return}
- openSheet('<h3>Registrar transferencia recibida</h3><p class="hint">'+safe(h.name)+' · pendiente por recibir '+money(balance)+'</p><form id="houseRepaymentForm"><label>Valor recibido (COP)</label><input id="houseRepaymentAmount" type="number" inputmode="numeric" min="1" max="'+balance+'" step="1" required><label>Fecha de la transferencia</label><input id="houseRepaymentDate" type="date" value="'+iso(today)+'" required><button class="btn" style="margin-top:18px">Registrar abono</button></form>');
- $("houseRepaymentForm").onsubmit=e=>{e.preventDefault();const amount=Number($("houseRepaymentAmount").value),date=$("houseRepaymentDate").value;
-  if(!Number.isSafeInteger(amount)||amount<=0||amount>houseSettled(h)){toast("El abono debe ser válido y no superar el saldo pendiente");return}
+ const balance=houseSettled(h);if(balance===0){toast("Este gasto ya está equilibrado");return}
+ if(!d.accounts.length){toast("Crea una cuenta antes de registrar una transferencia");return}
+ const incoming=balance>0,maxAmount=Math.abs(balance),defaultAccount=h.accountId||d.accounts[0].id;
+ const accountOptions=d.accounts.map(a=>'<option value="'+safe(a.id)+'" '+(a.id===defaultAccount?"selected":"")+'>'+safe(a.name)+'</option>').join("");
+ openSheet('<h3>'+(incoming?"Registrar transferencia recibida":"Registrar pago a tu esposa")+'</h3><p class="hint">'+safe(h.name)+' · '+(incoming?"pendiente por recibir ":"pendiente por pagar ")+money(maxAmount)+'</p>'+
+  '<form id="houseRepaymentForm"><label>Valor de la transferencia (COP)</label><input id="houseRepaymentAmount" type="number" inputmode="numeric" min="1" max="'+maxAmount+'" step="1" required>'+
+  '<label>Cuenta utilizada</label><select id="houseRepaymentAccount" required>'+accountOptions+'</select><label>Fecha</label><input id="houseRepaymentDate" type="date" value="'+iso(today)+'" required>'+
+  '<button class="btn" style="margin-top:18px">Registrar transferencia</button></form>');
+ $("houseRepaymentForm").onsubmit=e=>{
+  e.preventDefault();const amount=Number($("houseRepaymentAmount").value),date=$("houseRepaymentDate").value,accountId=$("houseRepaymentAccount").value;
+  if(!Number.isSafeInteger(amount)||amount<=0||amount>Math.abs(houseSettled(h))){toast("El valor debe ser válido y no superar el saldo pendiente");return}
   if(!date||Number.isNaN(new Date(date+"T12:00:00").getTime())){toast("Revisa la fecha");return}
-  h.repayments=Array.isArray(h.repayments)?h.repayments:[];h.repayments.push({id:uid(),amount:amount,date:date});
-  if(h.accountId)d.moves.push({id:uid(),type:"income",date:date,desc:"Reembolso hogar: "+h.name,amount:amount,cat:"Hogar",account:h.accountId,note:"Reembolso de gasto compartido",houseReimbursement:true,houseExpenseId:h.id,created:now()});
-  log("Abono hogar","Hogar",h.name+" · "+money(amount));save();closeSheet();toast("Abono registrado");
+  if(!d.accounts.some(a=>a.id===accountId)){toast("Selecciona una cuenta válida");return}
+  h.repayments=Array.isArray(h.repayments)?h.repayments:[];
+  h.repayments.push({id:uid(),amount:amount,date:date,direction:incoming?"received":"paid",accountId:accountId});
+  d.moves.push({id:uid(),type:incoming?"income":"expense",date:date,desc:(incoming?"Reembolso recibido: ":"Pago a esposa: ")+h.name,amount:amount,cat:"Hogar",account:accountId,note:"Liquidación de gasto compartido",houseReimbursement:true,houseExpenseId:h.id,created:now()});
+  log("Liquidación hogar","Hogar",h.name+" · "+money(amount));save();closeSheet();toast("Transferencia registrada");
  };
 }
+
 async function shareHouseSummary(){
   const monthInput=$("houseShareMonth");
   const selectedMonth=monthInput?.value||iso(today).slice(0,7);
@@ -2514,7 +2524,7 @@ function houseShares(h){
 }
 function houseSettled(h){
   const mine=houseShares(h).mine,paid=Math.max(0,Number(h&&h.paidByMe!==undefined?h.paidByMe:h&&h.paid)||0);
-  const repayments=(Array.isArray(h&&h.repayments)?h.repayments:[]).reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0);
+  const repayments=(Array.isArray(h&&h.repayments)?h.repayments:[]).reduce((sum,p)=>sum+(p.direction==="paid"?-1:1)*Math.max(0,Number(p.amount)||0),0);
   return paid-mine-repayments;
 }
 function openHouseForm(editId=null){
