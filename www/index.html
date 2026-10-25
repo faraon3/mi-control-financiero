@@ -1255,6 +1255,40 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
       </div>
     </div>
 
+
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Proyección financiera</div>
+      <p class="hint" style="margin-top:6px">Estimación orientativa a 30 y 60 días usando el saldo disponible, ingresos y gastos históricos, recurrencias y obligaciones registradas. No es una garantía del saldo futuro.</p>
+      <button class="btn secondary" id="runFinancialProjection" style="margin-top:8px">Calcular proyección</button>
+      <div id="financialProjectionReport" style="margin-top:12px"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Plan para distribuir el sueldo</div>
+      <p class="hint" style="margin-top:6px">Usa tu ingreso mensual habitual o el promedio de ingresos recientes y prioriza obligaciones antes de sugerir ahorro y gastos flexibles.</p>
+      <label for="salaryPlanIncome">Sueldo neto mensual (COP)</label>
+      <input id="salaryPlanIncome" type="number" min="0" step="1000" inputmode="numeric" placeholder="Vacío = estimar con tus ingresos recientes">
+      <button class="btn secondary" id="runSalaryPlan" style="margin-top:10px">Preparar distribución</button>
+      <div id="salaryPlanReport" style="margin-top:12px"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Herramientas para Colombia</div>
+      <p class="hint" style="margin-top:6px">Estimaciones básicas en pesos colombianos. Verifica las condiciones de tu banco y tu situación laboral antes de tomar decisiones.</p>
+      <label for="colombiaCalcType">Cálculo</label>
+      <select id="colombiaCalcType">
+        <option value="4x1000">GMF (4×1.000) estimado</option>
+        <option value="prima">Prima de servicios estimada</option>
+        <option value="cesantias">Cesantías estimadas</option>
+        <option value="cesantiasInterest">Intereses de cesantías estimados</option>
+        <option value="ea">Interés efectivo anual a mensual</option>
+      </select>
+      <label for="colombiaCalcAmount">Base o capital (COP)</label>
+      <input id="colombiaCalcAmount" type="number" min="0" step="1000" inputmode="numeric" placeholder="Ej. 1000000">
+      <div id="colombiaDaysWrap"><label for="colombiaCalcDays">Días liquidados (prima/cesantías)</label><input id="colombiaCalcDays" type="number" min="0" max="360" value="180"></div>
+      <div id="colombiaRateWrap" style="display:none"><label for="colombiaCalcRate">Tasa efectiva anual (%)</label><input id="colombiaCalcRate" type="number" min="0" max="1000" step="0.1" value="12"></div>
+      <button class="btn secondary" id="runColombiaCalc" style="margin-top:10px">Calcular</button>
+      <div id="colombiaCalcResult" style="margin-top:12px"></div>
+    </div>
+
     <div class="card" style="margin-top:12px">
       <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Comparación con el mes anterior</div>
       <div class="row" style="margin-top:12px;gap:12px">
@@ -3255,6 +3289,11 @@ function runSmokeTests(){
   test("Estimación diaria",Number.isFinite(computeSafeDaily()),"La estimación debe ser un número finito.");
   test("IDs de cuentas",d.accounts.every(a=>!!a.id),"Cada cuenta debe tener identificador.");
   test("Reparto hogar suma el total",d.house.every(h=>{const z=houseShares(h);return z.mine>=0&&z.spouse>=0&&z.mine+z.spouse===z.total;}),"Valida las partes registradas de cada gasto.");
+  test("Proyección 30 días produce saldo finito",Number.isFinite(financialProjection(30).balance));
+  test("Proyección 60 días produce saldo finito",Number.isFinite(financialProjection(60).balance));
+  test("Distribución de sueldo respeta compromisos y no genera valores negativos",(()=>{const p=buildSalaryDistribution(2000000);return p.obligations>=0&&p.emergency>=0&&p.savingsTarget>=0&&p.flexible>=0})());
+  test("GMF 4x1000 calcula 4.000 por millón",Math.round(1000000*0.004)===4000);
+  test("Prima simplificada para 180 días equivale a la mitad de la base",Math.round(1000000*180/360)===500000);
   test("Hogar: plantilla abre el formulario",document.querySelectorAll("[data-house-template]").length>=3);
   test("Hogar: saldo con pagos parciales",houseSettled({amount:100000,myShare:60000,paidByMe:40000,paidBySpouse:60000,repayments:[]})===-20000);
   test("Hogar: reembolso recibido reduce saldo a favor",houseSettled({amount:100000,myShare:50000,paidByMe:100000,repayments:[{amount:20000,direction:"received"}]})===30000);
@@ -3275,6 +3314,111 @@ function runSmokeTests(){
   return results;
 }
 $("runSmokeTests").onclick=()=>runSmokeTests();
+
+/* ============ INTELIGENCIA FINANCIERA C ============ */
+function dateAfterDays(days){
+  const dt=new Date();dt.setHours(12,0,0,0);dt.setDate(dt.getDate()+days);
+  return iso(dt);
+}
+function monthDiffKey(date){
+  const dte=new Date(date+"T12:00:00"),nowDate=new Date();nowDate.setHours(12,0,0,0);
+  return (nowDate.getFullYear()-dte.getFullYear())*12+(nowDate.getMonth()-dte.getMonth());
+}
+function historicalMonthlyNet(){
+  const buckets=new Map();
+  (d.moves||[]).forEach(m=>{
+    if(!m.date||m.date>=iso(today)||m.houseCashMovement||m.houseReimbursement||m.recurringId)return;
+    const age=monthDiffKey(m.date);if(age<1||age>3)return;
+    const key=m.date.slice(0,7);if(!buckets.has(key))buckets.set(key,{income:0,expense:0});
+    const b=buckets.get(key);if(m.type==="income")b.income+=Number(m.amount)||0;else if(m.type==="expense")b.expense+=Number(m.amount)||0;
+  });
+  const months=[...buckets.values()];
+  return {income:months.length?months.reduce((a,b)=>a+b.income,0)/months.length:0,expense:months.length?months.reduce((a,b)=>a+b.expense,0)/months.length:0,months:months.length};
+}
+function financialProjection(days){
+  const start=new Date();start.setHours(12,0,0,0);
+  const end=new Date(start);end.setDate(end.getDate()+days);
+  let expectedIncome=0,expectedExpense=0;
+  const from=iso(start),to=iso(end);
+  (d.recurring||[]).forEach(rule=>{
+    if(rule.active===false||!rule.nextDate||!Number(rule.amount))return;
+    let dt=new Date(rule.nextDate+"T12:00:00"),guard=0;
+    while(dt<=end&&guard++<240){
+      if(dt>=start){if(rule.type==="income")expectedIncome+=Number(rule.amount)||0;else expectedExpense+=Number(rule.amount)||0;}
+      const next=advanceRecurrence(iso(dt),rule.repeat);if(!next||next<=iso(dt))break;dt=new Date(next+"T12:00:00");
+    }
+  });
+  const bills=(d.bills||[]).filter(b=>!b.paid&&b.due&&b.due>=from&&b.due<=to);
+  const billAmount=bills.reduce((sum,b)=>sum+(Number(b.amount)||0),0);
+  const debtItems=(d.debts||[]).filter(x=>Number(x.amount)>0&&Number(x.installment)>0&&x.due&&x.due>=from&&x.due<=to);
+  const debtAmount=debtItems.reduce((sum,x)=>sum+Math.min(Number(x.amount),Number(x.installment)),0);
+  // Los gastos variables se proyectan con el promedio de hasta 3 meses cerrados;
+  // las recurrencias se calculan aparte para no duplicar sus movimientos históricos.
+  const hist=historicalMonthlyNet();
+  const variableDays=days;
+  const variableNet=(hist.income-hist.expense)*variableDays/30;
+  const available=computeAvailable();
+  const balance=available+expectedIncome-expectedExpense-billAmount-debtAmount+variableNet;
+  return {days,available,expectedIncome,expectedExpense,billAmount,debtAmount,variableNet,balance,histMonths:hist.months,bills:bills.length,debtItems:debtItems.length};
+}
+function renderFinancialProjection(){
+  const out=$("financialProjectionReport");if(!out)return;
+  const p30=financialProjection(30),p60=financialProjection(60);
+  const card=p=>'<div class="card" style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>En '+p.days+' días</strong><strong style="color:'+(p.balance<0?'var(--danger)':'var(--success)')+'">'+money(p.balance)+'</strong></div><div class="hint" style="margin-top:6px">Disponible hoy: '+money(p.available)+' · Ingresos recurrentes: '+money(p.expectedIncome)+' · Gastos recurrentes: '+money(p.expectedExpense)+'</div><div class="hint">Facturas pendientes: '+money(p.billAmount)+' · Cuotas estimadas: '+money(p.debtAmount)+'</div><div class="hint">Ajuste por tendencia histórica: '+money(p.variableNet)+'</div></div>';
+  out.innerHTML='<p class="hint">Promedio histórico calculado con '+p30.histMonths+' mes(es) cerrado(s) con movimientos no recurrentes. '+(p30.histMonths<3?'Hay pocos datos; la proyección puede ser menos precisa.':'')+'</p>'+card(p30)+card(p60)+'<p class="hint" style="margin-top:8px">Las facturas y cuotas se descuentan según sus fechas registradas. Verifica que no estén duplicadas como otros compromisos.</p>';
+  return {p30,p60};
+}
+$("runFinancialProjection").onclick=renderFinancialProjection;
+function buildSalaryDistribution(income){
+  const nowKey=iso(today),limit=dateAfterDays(30);
+  const bills=(d.bills||[]).filter(b=>!b.paid&&b.due&&b.due>=nowKey&&b.due<=limit).reduce((a,b)=>a+Math.max(0,Number(b.amount)||0),0);
+  const debts=(d.debts||[]).filter(x=>Number(x.amount)>0&&Number(x.installment)>0&&x.due&&x.due>=nowKey&&x.due<=limit).reduce((a,x)=>a+Math.min(Number(x.amount),Number(x.installment)),0);
+  const budgetCaps=(d.budgets||[]).reduce((a,b)=>a+Math.max(0,Number(b.limit)||0),0);
+  const obligations=bills+debts;
+  const afterObligations=income-obligations;
+  const emergency= Math.max(0,afterObligations)*0.10;
+  const goalRoom=Math.max(0,afterObligations-emergency);
+  const savingsTarget=Math.min(goalRoom,Math.max(0,Math.round(income*0.10)));
+  const flexible=Math.max(0,afterObligations-emergency-savingsTarget);
+  return {income,bills,debts,obligations,afterObligations,emergency,savingsTarget,flexible,budgetCaps};
+}
+function renderSalaryPlan(){
+  const out=$("salaryPlanReport");if(!out)return;
+  const entered=$("salaryPlanIncome").value.trim(),hist=historicalMonthlyNet();
+  const income=entered===""?Math.round(hist.income):Number(entered);
+  if(!Number.isSafeInteger(income)||income<=0){out.innerHTML='<p class="hint">Ingresa tu sueldo neto mensual o registra ingresos de meses anteriores para estimar un valor.</p>';return}
+  const p=buildSalaryDistribution(income);
+  const rows=[
+    ["1. Facturas y servicios próximos",p.bills],
+    ["2. Cuotas de deudas próximas",p.debts],
+    ["3. Reserva inicial (10% de lo restante)",p.emergency],
+    ["4. Ahorro sugerido",p.savingsTarget],
+    ["5. Gastos variables y otros",p.flexible]
+  ];
+  out.innerHTML='<div class="card"><div class="hint">Ingreso usado para el plan</div><strong style="font-size:20px">'+money(income)+'</strong><div class="hint">'+(entered===""?"Estimado con ingresos históricos.":"Valor ingresado manualmente.")+'</div></div>'+
+    rows.map(r=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><span>'+safe(r[0])+'</span><strong>'+money(r[1])+'</strong></div>').join("")+
+    '<p class="hint" style="margin-top:8px">'+(p.afterObligations<0?'Alerta: tus compromisos superan el sueldo indicado. No asignes dinero a gastos flexibles hasta revisar las fechas, montos y obligaciones.':'Propuesta orientativa, no una orden de pago. Ajusta los porcentajes según tus gastos reales y conserva un fondo de emergencia.')+'</p>';
+}
+$("runSalaryPlan").onclick=renderSalaryPlan;
+function runColombiaFinancialCalc(){
+  const type=$("colombiaCalcType").value,amount=Number($("colombiaCalcAmount").value),days=Math.max(0,Math.min(360,Number($("colombiaCalcDays").value)||0)),rate=Math.max(0,Number($("colombiaCalcRate").value)||0);
+  const out=$("colombiaCalcResult");
+  if(!Number.isFinite(amount)||amount<0){out.textContent="Ingresa una base válida.";return}
+  let result=0,label="";
+  if(type==="4x1000"){result=amount*0.004;label="GMF estimado (0,4%)"; }
+  else if(type==="prima"){result=amount*days/360;label="Prima estimada"; }
+  else if(type==="cesantias"){result=amount*days/360;label="Cesantías estimadas"; }
+  else if(type==="cesantiasInterest"){result=amount*days*0.12/360;label="Intereses de cesantías estimados (12% anual proporcional)"; }
+  else if(type==="ea"){result=amount*(Math.pow(1+rate/100,1/12)-1);label="Interés efectivo equivalente a un mes"; }
+  out.innerHTML='<div class="card"><div class="hint">'+safe(label)+'</div><strong style="font-size:22px">'+money(Math.round(result))+'</strong><p class="hint" style="margin-top:8px">'+(type==="4x1000"?"Estimación sin aplicar posibles exenciones o reglas particulares de la cuenta.":type==="prima"||type==="cesantias"||type==="cesantiasInterest"?"Estimación simplificada; puede variar según salario base, auxilios aplicables, días reconocidos y condiciones legales. No reemplaza una liquidación laboral.":"Equivalencia matemática de una tasa efectiva anual a un periodo mensual; no incluye comisiones, impuestos ni cambios de tasa.")+'</p></div>';
+}
+$("colombiaCalcType").addEventListener("change",()=>{
+  const type=$("colombiaCalcType").value;
+  $("colombiaDaysWrap").style.display=["prima","cesantias","cesantiasInterest"].includes(type)?"block":"none";
+  $("colombiaRateWrap").style.display=type==="ea"?"block":"none";
+});
+$("runColombiaCalc").onclick=runColombiaFinancialCalc;
+
 function calculatePaymentPriorities(){
   const todayDate=new Date();
   todayDate.setHours(12,0,0,0);
