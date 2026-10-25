@@ -102,6 +102,11 @@ input,select,textarea{font:inherit}
 .icon{display:inline-block;width:20px;height:20px;vertical-align:middle;flex-shrink:0}
 .icon svg{width:100%;height:100%;display:block}
 
+
+/* Bloqueo de seguridad local */
+#securityLockOverlay input{background:var(--surface-container);color:var(--on-surface);border:1px solid var(--outline);border-radius:12px;padding:14px;letter-spacing:4px;font-size:20px;text-align:center}
+#securityLockOverlay input:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+
 /* ============================================================
    HEADER
    ============================================================ */
@@ -1194,11 +1199,28 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
     </div>
     <div class="plan-view" id="planHouse">
       <div class="card" style="margin-bottom:12px">
+        <div class="section-head"><h2>Plantillas del hogar</h2></div>
+        <p class="hint">Crea un registro rápido para los gastos habituales. Revisa el valor, quién pagó y la división antes de guardar.</p>
+        <div class="row" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <button class="btn secondary" type="button" data-house-template="Arriendo">＋ Arriendo</button>
+          <button class="btn secondary" type="button" data-house-template="Servicios públicos">＋ Servicios públicos</button>
+          <button class="btn secondary" type="button" data-house-template="Mercado">＋ Mercado</button>
+          <button class="btn ghost" type="button" data-house-template="Otro gasto del hogar">＋ Otro gasto</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <div class="section-head"><h2>Resumen para compartir</h2></div>
-        <p class="hint">Genera una imagen con los gastos compartidos del mes, el total y la parte de cada uno. Solo incluye gastos del hogar.</p>
+        <p class="hint">Genera una imagen o exporta un CSV con los gastos compartidos del mes, la división acordada y el saldo de conciliación. Solo incluye gastos del hogar.</p>
         <label for="houseShareMonth">Mes del resumen</label>
         <input id="houseShareMonth" type="month">
-        <button class="btn" type="button" style="width:100%;margin-top:12px" onclick="shareHouseSummary()">Compartir gastos del hogar</button>
+        <button class="btn" type="button" style="width:100%;margin-top:12px" onclick="shareHouseSummary()">Compartir imagen del hogar</button>
+        <button class="btn secondary" type="button" style="width:100%;margin-top:8px" onclick="exportHouseSummaryCsv()">Exportar resumen CSV</button>
+        <button class="btn ghost" type="button" style="width:100%;margin-top:8px" onclick="shareHouseSummaryText()">Compartir resumen en texto</button>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="section-head"><h2>Conciliación</h2></div>
+        <p class="hint">El saldo se calcula con lo que pagó cada uno, la parte acordada y los reembolsos registrados. Positivo: tienes saldo a favor; negativo: debes aportar.</p>
+        <div id="houseReconciliationSummary" class="hint"></div>
       </div>
       <div class="card"><div id="houselist" class="list"></div></div>
     </div>
@@ -1231,6 +1253,40 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
           <div class="value" id="rProj" style="font-size:16px;font-weight:700;margin-top:4px">$ 0</div>
         </div>
       </div>
+    </div>
+
+
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Proyección financiera</div>
+      <p class="hint" style="margin-top:6px">Estimación orientativa a 30 y 60 días usando el saldo disponible, ingresos y gastos históricos, recurrencias y obligaciones registradas. No es una garantía del saldo futuro.</p>
+      <button class="btn secondary" id="runFinancialProjection" style="margin-top:8px">Calcular proyección</button>
+      <div id="financialProjectionReport" style="margin-top:12px"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Plan para distribuir el sueldo</div>
+      <p class="hint" style="margin-top:6px">Usa tu ingreso mensual habitual o el promedio de ingresos recientes y prioriza obligaciones antes de sugerir ahorro y gastos flexibles.</p>
+      <label for="salaryPlanIncome">Sueldo neto mensual (COP)</label>
+      <input id="salaryPlanIncome" type="number" min="0" step="1000" inputmode="numeric" placeholder="Vacío = estimar con tus ingresos recientes">
+      <button class="btn secondary" id="runSalaryPlan" style="margin-top:10px">Preparar distribución</button>
+      <div id="salaryPlanReport" style="margin-top:12px"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Herramientas para Colombia</div>
+      <p class="hint" style="margin-top:6px">Estimaciones básicas en pesos colombianos. Verifica las condiciones de tu banco y tu situación laboral antes de tomar decisiones.</p>
+      <label for="colombiaCalcType">Cálculo</label>
+      <select id="colombiaCalcType">
+        <option value="4x1000">GMF (4×1.000) estimado</option>
+        <option value="prima">Prima de servicios estimada</option>
+        <option value="cesantias">Cesantías estimadas</option>
+        <option value="cesantiasInterest">Intereses de cesantías estimados</option>
+        <option value="ea">Interés efectivo anual a mensual</option>
+      </select>
+      <label for="colombiaCalcAmount">Base o capital (COP)</label>
+      <input id="colombiaCalcAmount" type="number" min="0" step="1000" inputmode="numeric" placeholder="Ej. 1000000">
+      <div id="colombiaDaysWrap"><label for="colombiaCalcDays">Días liquidados (prima/cesantías)</label><input id="colombiaCalcDays" type="number" min="0" max="360" value="180"></div>
+      <div id="colombiaRateWrap" style="display:none"><label for="colombiaCalcRate">Tasa efectiva anual (%)</label><input id="colombiaCalcRate" type="number" min="0" max="1000" step="0.1" value="12"></div>
+      <button class="btn secondary" id="runColombiaCalc" style="margin-top:10px">Calcular</button>
+      <div id="colombiaCalcResult" style="margin-top:12px"></div>
     </div>
 
     <div class="card" style="margin-top:12px">
@@ -1276,9 +1332,23 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Respaldo</div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Seguridad local</div>
+        <p class="hint" style="margin:8px 0">Bloqueo con PIN y cierre automático tras 15 minutos sin actividad.</p>
+        <div id="securityStatus" class="hint">Consultando configuración...</div>
+        <button class="btn secondary" id="configureSecurityPin" style="margin-top:10px">Configurar o cambiar PIN</button>
+        <button class="btn ghost" id="removeSecurityPin" style="margin-top:8px">Desactivar PIN</button>
+      </div>
+
+            <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Respaldo</div>
       <button class="btn secondary" id="export" style="margin-top:12px">Exportar JSON</button>
+      <button class="btn ghost" id="exportEncrypted" style="margin-top:8px">Exportar copia cifrada con contraseña</button>
+      <button class="btn ghost" id="importEncryptedBtn" style="margin-top:8px">Importar copia cifrada</button>
+      <input id="importEncrypted" type="file" accept=".mcf,.json,application/json" hidden>
       <button class="btn ghost" id="csv" style="margin-top:8px">Exportar CSV (todos los datos)</button>
+      <button class="btn ghost" id="importBankCsvBtn" style="margin-top:8px">Importar movimientos bancarios CSV</button>
+      <input id="importBankCsv" type="file" accept=".csv,text/csv" hidden>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
         <div style="font-weight:700">Revisión de datos</div>
         <div class="hint" style="margin-top:5px">Busca posibles inconsistencias sin modificar tus registros.</div>
@@ -1304,9 +1374,16 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
         <div id="releaseCheckReport" style="margin-top:10px"></div>
       </div>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
+        <div style="font-weight:700">Guía de inicio</div>
+        <div class="hint" style="margin-top:5px">Aprende lo básico y vuelve a consultar los pasos cuando lo necesites.</div>
+        <button class="btn secondary" id="openGettingStarted" style="margin-top:10px">Ver guía de uso</button>
+      </div>
+      <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
         <div style="font-weight:700">Estado de vencimientos</div>
         <div class="hint" style="margin-top:5px">Resumen local de facturas y cuotas vencidas o próximas. No sustituye las notificaciones del sistema.</div>
         <button class="btn secondary" id="refreshDueStatus" style="margin-top:10px">Actualizar vencimientos</button>
+        <button class="btn ghost" id="enableNotifications" style="margin-top:8px">Activar recordatorios en este dispositivo</button>
+        <div class="hint" id="notificationStatus" style="margin-top:6px">Los recordatorios requieren permiso del dispositivo.</div>
         <div id="dueStatusReport" style="margin-top:10px"></div>
       </div>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
@@ -1353,28 +1430,28 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
 </main>
 
 <!-- ============ BOTTOM NAV ============ -->
-<nav class="bottom">
+<nav class="bottom" aria-label="Navegación principal">
   <div class="inner">
-    <button data-tab="home" class="active">
+    <button data-tab="home" class="active" aria-label="Inicio" aria-current="page">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
       <span class="label">Inicio</span>
     </button>
-    <button data-tab="moves">
+    <button data-tab="moves" aria-label="Movimientos">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/><path d="M17 7v8"/></svg></span>
       <span class="label">Movimientos</span>
     </button>
-    <button class="add" id="btnAdd">
+    <button class="add" id="btnAdd" aria-label="Crear un registro nuevo">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
       <span class="label">Crear</span>
     </button>
-    <button data-tab="plan">
+    <button data-tab="plan" aria-label="Organizar finanzas">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>
       <span class="label">Organizar</span>
     </button>
-    <button data-tab="reports">
+    <button data-tab="reports" aria-label="Análisis e informes">
       <span class="ind"></span>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span>
       <span class="label">Análisis</span>
@@ -1383,6 +1460,20 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
 </nav>
 
 <!-- ============ SHEET ============ -->
+
+<!-- Bloqueo local por PIN -->
+<div id="securityLockOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--surface-dim);padding:24px;align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:360px;padding:24px">
+    <div style="font-size:28px;text-align:center">🔒</div>
+    <h2 style="text-align:center;margin:8px 0">Mi Control Financiero</h2>
+    <p id="securityLockMessage" class="hint" style="text-align:center">Ingresa tu PIN para continuar.</p>
+    <label for="securityPinInput">PIN de seguridad</label>
+    <input id="securityPinInput" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" style="width:100%;margin-top:8px">
+    <button id="securityUnlockBtn" class="btn" style="width:100%;margin-top:14px">Desbloquear</button>
+    <p class="hint" style="font-size:11px;margin-top:12px">El PIN bloquea el acceso a la interfaz, pero no cifra por sí solo los datos guardados en este dispositivo. Conserva una copia de seguridad.</p>
+  </div>
+</div>
+
 <div class="sheet-backdrop" id="sheetBg"></div>
 <div class="sheet" id="sheet">
   <div class="grab" id="sheetGrab"></div>
@@ -1404,13 +1495,15 @@ const $=id=>document.getElementById(id);
 const money=v=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(Number(v)||0);
 const now=()=>new Date().toISOString();
 const uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random();
-const today=new Date();
+let today=new Date();
 const iso=d=>{const a=new Date(d.getTime()-d.getTimezoneOffset()*60000);return a.toISOString().slice(0,10)};
-const month=iso(today).slice(0,7);
+let month=iso(today).slice(0,7);
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"}):"Sin fecha";
 
 $("today").textContent=today.toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+function refreshCurrentDate(){const fresh=new Date();if(iso(fresh)!==iso(today)||fresh.getMonth()!==today.getMonth()||fresh.getFullYear()!==today.getFullYear()){today=fresh;month=iso(today).slice(0,7);$("today").textContent=today.toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"});render();}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshCurrentDate()});window.addEventListener("focus",refreshCurrentDate);
 
 const THEMES=["blue","green","purple","amber","rose"];
 const savedTheme=localStorage.getItem("mcf_theme")||"blue";
@@ -1420,10 +1513,125 @@ document.querySelectorAll("#themeSeg button").forEach(b=>{
   else b.classList.remove("active");
 });
 
-let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[]};
+let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],house:[],audit:[],recurring:[]};
 try{let o=JSON.parse(localStorage.getItem(K)||"null");if(o)Object.keys(d).forEach(k=>d[k]=Array.isArray(o[k])?o[k]:[])}catch(e){}
 
 function log(a,e,det,r=""){d.audit.unshift({id:uid(),at:now(),action:a,entity:e,details:det,reason:r});d.audit=d.audit.slice(0,1000)}
+
+/* ============ SEGURIDAD LOCAL: PIN + INACTIVIDAD ============ */
+const SECURITY_KEY="mcf_security_v1";
+const SECURITY_TIMEOUT=15*60*1000;
+let securityConfig=null, securityLastActivity=Date.now(), securityLocked=false, securityAttempts=0, securityRetryAt=0;
+async function pinDigest(pin,salt){
+  const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:salt,iterations:210000,hash:"SHA-256"},material,256);
+  return securityB64(new Uint8Array(bits));
+}
+function securityB64(bytes){let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary)}
+function securityFromB64(value){const binary=atob(value);return Uint8Array.from(binary,c=>c.charCodeAt(0))}
+function readSecurityConfig(){
+  try{const v=JSON.parse(localStorage.getItem(SECURITY_KEY)||"null");return v&&v.version===1&&v.salt&&v.digest?v:null}catch(e){return null}
+}
+function refreshSecurityStatus(){
+  const el=$("securityStatus");if(!el)return;
+  el.textContent=securityConfig?"PIN activado · bloqueo tras 15 minutos sin actividad.":"PIN desactivado.";
+  $("removeSecurityPin").style.display=securityConfig?"block":"none";
+}
+function showSecurityLock(message="Ingresa tu PIN para continuar."){
+  if(!securityConfig)return;
+  securityLocked=true;
+  $("securityLockOverlay").style.display="flex";
+  $("securityLockMessage").textContent=message;
+  $("securityPinInput").value="";
+  $("securityUnlockBtn").disabled=Date.now()<securityRetryAt;
+  setTimeout(()=>$("securityPinInput").focus(),100);
+}
+function hideSecurityLock(){
+  securityLocked=false;securityLastActivity=Date.now();
+  $("securityLockOverlay").style.display="none";
+  $("securityPinInput").value="";
+}
+async function configureSecurityPin(){
+  const pin=prompt("Crea un PIN de 6 a 12 dígitos. No lo olvides: no hay recuperación automática.");
+  if(pin===null)return;
+  if(!/^\d{6,12}$/.test(pin)){toast("El PIN debe tener entre 6 y 12 dígitos");return}
+  const confirmPin=prompt("Escribe nuevamente el PIN para confirmarlo.");
+  if(confirmPin===null)return;
+  if(pin!==confirmPin){toast("Los PIN no coinciden");return}
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const digest=await pinDigest(pin,salt);
+    securityConfig={version:1,salt:securityB64(salt),digest};
+    localStorage.setItem(SECURITY_KEY,JSON.stringify(securityConfig));
+    refreshSecurityStatus();toast("PIN configurado");
+  }catch(err){console.error(err);toast("No se pudo configurar el PIN en este dispositivo")}
+}
+$("configureSecurityPin").onclick=configureSecurityPin;
+$("removeSecurityPin").onclick=()=>{
+  if(!securityConfig)return;
+  m3Confirm({title:"Desactivar el PIN",message:"La aplicación dejará de bloquearse al abrirse y después de la inactividad.",confirmLabel:"Desactivar",danger:true},()=>{
+    localStorage.removeItem(SECURITY_KEY);securityConfig=null;hideSecurityLock();refreshSecurityStatus();closeSheet();toast("PIN desactivado");
+  });
+};
+$("securityUnlockBtn").onclick=async()=>{
+  if(!securityConfig){hideSecurityLock();return}
+  if(Date.now()<securityRetryAt){toast("Espera unos segundos antes de volver a intentar");return}
+  const pin=$("securityPinInput").value.trim();
+  if(!/^\d{6,12}$/.test(pin)){toast("Ingresa tu PIN de 6 a 12 dígitos");return}
+  $("securityUnlockBtn").disabled=true;
+  try{
+    const digest=await pinDigest(pin,securityFromB64(securityConfig.salt));
+    if(digest===securityConfig.digest){securityAttempts=0;securityRetryAt=0;hideSecurityLock()}
+    else{
+      securityAttempts++;
+      const wait=Math.min(30000,securityAttempts*2000);
+      securityRetryAt=Date.now()+wait;
+      $("securityPinInput").value="";
+      $("securityLockMessage").textContent="PIN incorrecto. Espera "+Math.ceil(wait/1000)+" segundos antes de volver a intentar.";
+      setTimeout(()=>{if(Date.now()>=securityRetryAt)$("securityUnlockBtn").disabled=false},wait);
+    }
+  }catch(err){console.error(err);toast("No se pudo verificar el PIN")}
+  finally{if(!securityLocked||Date.now()>=securityRetryAt)$("securityUnlockBtn").disabled=false}
+};
+$("securityPinInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("securityUnlockBtn").click()});
+function securityActivity(){
+  if(securityLocked||!securityConfig)return;
+  securityLastActivity=Date.now();
+}
+["pointerdown","keydown","touchstart","click"].forEach(ev=>document.addEventListener(ev,securityActivity,{passive:true}));
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  if(securityConfig&&Date.now()-securityLastActivity>=SECURITY_TIMEOUT)showSecurityLock("La sesión se bloqueó por inactividad. Ingresa tu PIN.");
+});
+setInterval(()=>{
+  if(securityConfig&&!securityLocked&&Date.now()-securityLastActivity>=SECURITY_TIMEOUT)showSecurityLock("La sesión se bloqueó por 15 minutos de inactividad.");
+},15000);
+securityConfig=readSecurityConfig();
+refreshSecurityStatus();
+if(securityConfig)showSecurityLock("Ingresa tu PIN para continuar.");
+
+function advanceRecurrence(date,repeat){
+  const dt=new Date(date+"T12:00:00");
+  if(repeat==="weekly")dt.setDate(dt.getDate()+7);
+  else if(repeat==="biweekly")dt.setDate(dt.getDate()+15);
+  else if(repeat==="monthly"){const day=dt.getDate();dt.setDate(1);dt.setMonth(dt.getMonth()+1);dt.setDate(Math.min(day,new Date(dt.getFullYear(),dt.getMonth()+1,0,12).getDate()));}
+  else if(repeat==="yearly"){const month=dt.getMonth(),day=dt.getDate();dt.setDate(1);dt.setFullYear(dt.getFullYear()+1);dt.setMonth(month);dt.setDate(Math.min(day,new Date(dt.getFullYear(),month+1,0,12).getDate()));}
+  return iso(dt);
+}
+function processRecurringMoves(){
+  d.recurring=Array.isArray(d.recurring)?d.recurring:[];
+  const todayKey=iso(new Date());let changed=false;
+  d.recurring.forEach(rule=>{
+    let safety=0;
+    while(rule.active!==false&&rule.nextDate&&rule.nextDate<=todayKey&&safety<240){
+      if(!d.accounts.some(a=>a.id===rule.account)){rule.active=false;changed=true;break;}
+      const exists=d.moves.some(m=>m.recurringId===rule.id&&m.date===rule.nextDate);
+      if(!exists)d.moves.push({id:uid(),type:rule.type,date:rule.nextDate,desc:rule.desc,amount:Number(rule.amount),cat:rule.cat,account:rule.account,note:rule.note||"",recurringId:rule.id,created:now()});
+      rule.nextDate=advanceRecurrence(rule.nextDate,rule.repeat);changed=true;safety++;
+    }
+  });
+  if(changed)save();
+}
 function save(){
   try{
     // Conserva una copia previa de seguridad antes de sobrescribir los datos actuales.
@@ -1439,6 +1647,9 @@ function save(){
     }
     localStorage.setItem(K,JSON.stringify(d));
     render();
+    if(localStorage.getItem("mcf_reminders_enabled")==="1" && typeof scheduleDeviceReminders==="function"){
+      setTimeout(()=>scheduleDeviceReminders({requestPermission:false,quiet:true}),250);
+    }
   }catch(err){
     alert("No se pudo guardar. Exporta una copia de seguridad y libera espacio si el problema continúa.");
   }
@@ -1466,7 +1677,7 @@ function restoreAutomaticBackup(){
   return true;
 }
 
-function total(m){const a=d.moves.filter(x=>x.date?.slice(0,7)===m);return{a,i:a.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),e:a.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0)}}
+function total(m){const raw=d.moves.filter(x=>x.date?.slice(0,7)===m);const a=raw.filter(x=>!x.houseCashMovement&&!x.houseReimbursement);d.house.filter(h=>h.date?.slice(0,7)===m).forEach(h=>a.push({id:"house-share-"+h.id,type:"expense",date:h.date,desc:h.name,amount:houseShares(h).mine,cat:"Hogar",account:"",houseShareSummary:true}));const i=a.filter(x=>x.type==="income").reduce((sum,x)=>sum+Number(x.amount||0),0);const e=a.filter(x=>x.type==="expense").reduce((sum,x)=>sum+Number(x.amount||0),0);return {a,i,e}}
 function bal(ac){
   const m=d.moves.filter(x=>x.account===ac.id).reduce((s,x)=>s+(x.type==="income"?1:-1)*x.amount,0);
   const t=d.transfers.reduce((s,x)=>s+(x.to===ac.id?x.amount:x.from===ac.id?-x.amount:0),0);
@@ -1817,16 +2028,98 @@ function renderPlan(){
       </button>
     </div>`,"Sin cuentas");
 
-  out("houselist",d.house,h=>`
-    <div class="item">
-      <div class="main">
-        <div class="t">${safe(h.name)}</div>
-        <div class="s">${fmt(h.date)} · total ${money(h.amount)} · tu parte ${money(h.amount*h.split/100)}</div>
-      </div>
-      <button class="kebab" data-house-menu="${h.id}" aria-label="Opciones">
-        <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></span>
-      </button>
-    </div>`,"Sin gastos compartidos");
+  out("houselist",d.house,h=>{
+    const shares=houseShares(h),settled=houseSettled(h),paid=Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0;
+    const repayments=(h.repayments||[]).reduce((sum,p)=>sum+Number(p.amount||0),0);
+    return '<div class="item"><div class="main"><div class="t">'+safe(h.name)+'</div><div class="s">'+fmt(h.date)+' · total '+money(shares.total)+'</div><div class="s">Tu parte: '+money(shares.mine)+' · Parte de ella: '+money(shares.spouse)+'</div><div class="s">Pagaste tú: '+money(paid)+' · Pagó ella: '+money(Math.max(0,Number(h.paidBySpouse)||0))+'</div><div class="s">Reembolsos netos registrados: '+money(repayments)+'</div><div class="s">'+(settled>0?'Saldo a tu favor: '+money(settled):settled<0?'Saldo a favor de ella: '+money(-settled):'Cuenta equilibrada')+'</div><div class="row" style="margin-top:8px;gap:8px"><button class="btn ghost" type="button" data-house-edit="'+h.id+'">Editar</button><button class="btn ghost" type="button" data-house-payback="'+h.id+'">Registrar abono</button></div></div></div>';
+  },"Sin gastos compartidos");
+}
+
+document.addEventListener("click",e=>{
+ const edit=e.target.closest("[data-house-edit]");if(edit){openHouseForm(edit.dataset.houseEdit);return}
+ const payback=e.target.closest("[data-house-payback]");if(payback){openHouseRepayment(payback.dataset.housePayback);return}
+});
+
+document.querySelectorAll("[data-house-template]").forEach(button=>{
+  button.addEventListener("click",()=>openHouseForm(null,button.dataset.houseTemplate));
+});
+function getHouseSummaryEntries(){
+  const selectedMonth=$("houseShareMonth")?.value||iso(today).slice(0,7);
+  return {selectedMonth,entries:(d.house||[]).filter(h=>String(h.date||"").slice(0,7)===selectedMonth).slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")))};
+}
+function getHouseReconciliation(entries){
+  return entries.reduce((acc,h)=>{
+    const settled=houseSettled(h);
+    acc.total+=Math.max(0,Number(h.amount)||0);
+    acc.myShare+=houseShares(h).mine;
+    acc.spouseShare+=houseShares(h).spouse;
+    acc.balance+=settled;
+    acc.minePaid+=Math.max(0,Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0);
+    acc.spousePaid+=Math.max(0,Number(h.paidBySpouse)||0);
+    return acc;
+  },{total:0,myShare:0,spouseShare:0,balance:0,minePaid:0,spousePaid:0});
+}
+function renderHouseReconciliation(){
+  const out=$("houseReconciliationSummary");if(!out)return;
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){out.textContent="No hay gastos compartidos registrados para este mes.";return}
+  const x=getHouseReconciliation(entries);
+  out.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+    '<div class="card"><div class="hint">Total registrado</div><strong>'+money(x.total)+'</strong></div>'+
+    '<div class="card"><div class="hint">Saldo de conciliación</div><strong style="color:'+(x.balance>0?'var(--success)':x.balance<0?'var(--danger)':'var(--on-surface)')+'">'+(x.balance>0?'A tu favor ':x.balance<0?'A favor de ella ':'Equilibrado ')+money(Math.abs(x.balance))+'</strong></div>'+
+    '<div class="card"><div class="hint">Pagaste tú</div><strong>'+money(x.minePaid)+'</strong></div>'+
+    '<div class="card"><div class="hint">Pagó ella</div><strong>'+money(x.spousePaid)+'</strong></div></div>'+
+    '<p class="hint" style="margin-top:8px">Mes: '+safe(selectedMonth)+'. El saldo suma lo pendiente de cada gasto después de los reembolsos registrados.</p>';
+}
+function csvHouseCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
+function exportHouseSummaryCsv(){
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){toast("No hay gastos del hogar para exportar en ese mes");return}
+  const rows=[["Fecha","Concepto","Total COP","Mi parte COP","Parte de ella COP","Pagué yo COP","Pagó ella COP","Saldo conciliación COP","Estado"]];
+  entries.forEach(h=>{
+    const sh=houseShares(h),balance=houseSettled(h);
+    rows.push([h.date||"",h.name||"",sh.total,sh.mine,sh.spouse,Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0,Number(h.paidBySpouse)||0,balance,balance>0?"A mi favor":balance<0?"A favor de ella":"Equilibrado"]);
+  });
+  const csv="\uFEFF"+rows.map(row=>row.map(csvHouseCell).join(";")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="resumen_hogar_"+selectedMonth+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast("Resumen del hogar exportado");
+}
+async function shareHouseSummaryText(){
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){toast("No hay gastos del hogar para compartir en ese mes");return}
+  const x=getHouseReconciliation(entries);
+  const lines=["MI CONTROL FINANCIERO · RESUMEN DEL HOGAR · "+selectedMonth,"Total: "+money(x.total),"Mi parte: "+money(x.myShare),"Parte de ella: "+money(x.spouseShare),"Pagado por mí: "+money(x.minePaid),"Pagado por ella: "+money(x.spousePaid),"Conciliación: "+(x.balance>0?"saldo a mi favor "+money(x.balance):x.balance<0?"saldo a favor de ella "+money(-x.balance):"equilibrado"),"","Detalle:"];
+  entries.forEach(h=>{const sh=houseShares(h),b=houseSettled(h);lines.push((h.date||"Sin fecha")+" · "+h.name+" · Total "+money(sh.total)+" · Mi parte "+money(sh.mine)+" · Su parte "+money(sh.spouse)+" · "+(b>0?"A mi favor "+money(b):b<0?"A favor de ella "+money(-b):"Equilibrado"))});
+  const textValue=lines.join("\n");
+  try{
+    if(navigator.share){await navigator.share({title:"Resumen de gastos del hogar",text:textValue});}
+    else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(textValue);toast("Resumen copiado para compartir");}
+    else {const blob=new Blob([textValue],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="resumen_hogar_"+selectedMonth+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast("Resumen de texto exportado");}
+  }catch(err){if(err&&err.name!=="AbortError"){console.error(err);toast("No se pudo compartir el resumen")}}
+}
+$("houseShareMonth")?.addEventListener("change",renderHouseReconciliation);
+
+function openHouseRepayment(id){
+ const h=d.house.find(x=>x.id===id);if(!h){toast("No se encontró el gasto");return}
+ const balance=houseSettled(h);if(balance===0){toast("Este gasto ya está equilibrado");return}
+ if(!d.accounts.length){toast("Crea una cuenta antes de registrar una transferencia");return}
+ const incoming=balance>0,maxAmount=Math.abs(balance),defaultAccount=h.accountId||d.accounts[0].id;
+ const accountOptions=d.accounts.map(a=>'<option value="'+safe(a.id)+'" '+(a.id===defaultAccount?"selected":"")+'>'+safe(a.name)+'</option>').join("");
+ openSheet('<h3>'+(incoming?"Registrar transferencia recibida":"Registrar pago a tu esposa")+'</h3><p class="hint">'+safe(h.name)+' · '+(incoming?"pendiente por recibir ":"pendiente por pagar ")+money(maxAmount)+'</p>'+
+  '<form id="houseRepaymentForm"><label>Valor de la transferencia (COP)</label><input id="houseRepaymentAmount" type="number" inputmode="numeric" min="1" max="'+maxAmount+'" step="1" required>'+
+  '<label>Cuenta utilizada</label><select id="houseRepaymentAccount" required>'+accountOptions+'</select><label>Fecha</label><input id="houseRepaymentDate" type="date" value="'+iso(today)+'" required>'+
+  '<button class="btn" style="margin-top:18px">Registrar transferencia</button></form>');
+ $("houseRepaymentForm").onsubmit=e=>{
+  e.preventDefault();const amount=Number($("houseRepaymentAmount").value),date=$("houseRepaymentDate").value,accountId=$("houseRepaymentAccount").value;
+  if(!Number.isSafeInteger(amount)||amount<=0||amount>Math.abs(houseSettled(h))){toast("El valor debe ser válido y no superar el saldo pendiente");return}
+  if(!date||Number.isNaN(new Date(date+"T12:00:00").getTime())){toast("Revisa la fecha");return}
+  if(!d.accounts.some(a=>a.id===accountId)){toast("Selecciona una cuenta válida");return}
+  h.repayments=Array.isArray(h.repayments)?h.repayments:[];
+  h.repayments.push({id:uid(),amount:amount,date:date,direction:incoming?"received":"paid",accountId:accountId});
+  d.moves.push({id:uid(),type:incoming?"income":"expense",date:date,desc:(incoming?"Reembolso recibido: ":"Pago a esposa: ")+h.name,amount:amount,cat:"Hogar",account:accountId,note:"Liquidación de gasto compartido",houseReimbursement:true,houseExpenseId:h.id,created:now()});
+  log("Liquidación hogar","Hogar",h.name+" · "+money(amount));save();closeSheet();toast("Transferencia registrada");
+ };
 }
 
 async function shareHouseSummary(){
@@ -1836,8 +2129,8 @@ async function shareHouseSummary(){
     .slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
   if(!entries.length){toast("No hay gastos compartidos registrados para ese mes");return}
   const total=entries.reduce((sum,h)=>sum+Math.max(0,Number(h.amount)||0),0);
-  const yourPart=entries.reduce((sum,h)=>sum+Math.max(0,Number(h.amount)||0)*(Number(h.split??50)/100),0);
-  const otherPart=total-yourPart;
+  const yourPart=entries.reduce((sum,h)=>sum+houseShares(h).mine,0);
+  const otherPart=entries.reduce((sum,h)=>sum+houseShares(h).spouse,0);
   const canvas=document.createElement("canvas");
   const width=1080,pad=64,rowH=104,headerH=300,summaryH=250,footerH=90;
   canvas.width=width;
@@ -1872,9 +2165,7 @@ async function shareHouseSummary(){
   y+=28;
   entries.forEach((h,i)=>{
     const amount=Math.max(0,Number(h.amount)||0);
-    const split=Math.min(100,Math.max(0,Number(h.split??50)));
-    const yours=amount*split/100;
-    const theirs=amount-yours;
+    const shares=houseShares(h),yours=shares.mine,theirs=shares.spouse;
     roundRect(pad,y,width-pad*2,rowH-8,14,i%2===0?"#151f30":"#111a29");
     ctx.fillStyle="#ffffff";ctx.font="600 25px system-ui";
     ctx.fillText(String(h.name||"Gasto").slice(0,34),pad+22,y+31);
@@ -1964,11 +2255,12 @@ function renderReports(){
         ? `Tu balance bajó ${money(Math.abs(delta))} frente al mes anterior. Revisa los gastos y los ingresos registrados.`
         : "Tu balance es igual al del mes anterior.";
   }
-  // Proyección simple: promedio diario * 30
-  const daysSoFar=new Date().getDate();
-  const projBalance=r.e>0?r.i-r.e:0;
-  const dailyAvg=daysSoFar>0?projBalance/daysSoFar:0;
-  $("rProj").textContent=money(dailyAvg*30);
+  // Para meses anteriores se muestra el resultado real; solo se proyecta el mes actual.
+  const selectedParts=selectedMonth.split("-").map(Number);
+  const selectedEnd=new Date(selectedParts[0],selectedParts[1],0,12);
+  const currentMonthKey=iso(new Date()).slice(0,7);
+  if(selectedMonth!==currentMonthKey){$("rProj").textContent=money(r.i-r.e);}
+  else{const daysSoFar=Math.max(1,new Date().getDate());$("rProj").textContent=money((r.i-r.e)/daysSoFar*selectedEnd.getDate());}
 
   // Gastos hormiga
   const ants=r.a.filter(m=>m.type==="expense"&&m.amount<20000);
@@ -2039,7 +2331,11 @@ function view(id){
   if(id===currentView)return;
   const prevIdx=["home","moves","plan","reports"].indexOf(currentView);
   const newIdx=["home","moves","plan","reports"].indexOf(id);
-  document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    const active=b.dataset.tab===id;
+    b.classList.toggle("active",active);
+    if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");
+  });
   document.querySelectorAll(".view").forEach(v=>{
     v.classList.remove("active","slide-back");
     if(v.id===id){
@@ -2191,10 +2487,12 @@ function openMoveForm(type="expense",editId=null){
       <input type="hidden" id="moveId" value="${m?.id||""}">
       <input type="hidden" id="moveType" value="${m?.type||type}">
       <label>Fecha</label>
-      <input id="moveDate" type="date" required max="${maxDate}" value="${m?.date||iso(today)}">
-      <label>Valor COP</label>
-      <input id="moveAmount" type="number" min="1" step="1" required value="${m?.amount||""}">
-      <label>Descripción</label>
+      <input id="moveDate" type="date" required value="${m?.date||iso(today)}">
+      ${!m?`<label>Repetición</label><select id="moveRepeat"><option value="none">No repetir</option><option value="weekly">Cada semana</option><option value="biweekly">Cada quincena</option><option value="monthly">Cada mes</option><option value="yearly">Cada año</option></select><p class="hint">Los movimientos futuros se crearán al abrir la app después de su fecha.</p>`:""}
+      <label for="moveAmount">Valor en pesos colombianos (COP)</label>
+      <input id="moveAmount" type="number" inputmode="numeric" min="1" step="1" required value="${m?.amount||""}" aria-describedby="moveAmountHelp">
+      <div class="hint" id="moveAmountHelp">Escribe solo números, sin puntos ni signos. <strong id="moveAmountFormatted" aria-live="polite">${m?money(m.amount):"Ej. $ 25.000"}</strong></div>
+      <label for="moveDesc">Descripción</label>
       <input id="moveDesc" maxlength="100" required value="${m?safe(m.desc):""}" placeholder="Mercado, salario…">
       <label>Categoría</label>
       <select id="moveCat">
@@ -2211,6 +2509,10 @@ function openMoveForm(type="expense",editId=null){
       <button class="btn" style="margin-top:20px">Guardar</button>
     </form>
   `);
+  const amountInput=$("moveAmount"),amountFormatted=$("moveAmountFormatted");
+  const updateAmountPreview=()=>{const v=Number(amountInput.value);amountFormatted.textContent=Number.isSafeInteger(v)&&v>0?money(v):"Ej. $ 25.000"};
+  amountInput.addEventListener("input",updateAmountPreview);
+  if(!m){setTimeout(()=>{amountInput.focus();if(type==="expense")amountInput.select()},80)}
   $("moveForm").onsubmit=e=>{
     e.preventDefault();
     const id=$("moveId").value,old=id?d.moves.find(x=>x.id===id):null;
@@ -2219,7 +2521,7 @@ function openMoveForm(type="expense",editId=null){
     const desc=$("moveDesc").value.trim();
     const accountId=$("moveAcc").value;
     if(!Number.isSafeInteger(amount)||amount<=0){toast("Valor inválido");return}
-    if(!date||Number.isNaN(new Date(date+"T12:00:00").getTime())||date>iso(today)){toast("La fecha no es válida o es futura");return}
+    if(!date||Number.isNaN(new Date(date+"T12:00:00").getTime())){toast("La fecha no es válida");return}
     if(!desc){toast("Escribe una descripción");return}
     if(!["income","expense"].includes($("moveType").value)){toast("Tipo de movimiento inválido");return}
     if(!d.accounts.some(a=>a.id===accountId)){toast("Selecciona una cuenta válida");return}
@@ -2230,8 +2532,16 @@ function openMoveForm(type="expense",editId=null){
       account:accountId,note:$("moveNote").value.trim(),
       created:old?.created||now()
     };
-    if(old){d.moves=d.moves.map(x=>x.id===id?nm:x);log("Edición","Movimiento",`${old.desc} → ${nm.desc}`,$("moveReason").value.trim())}
-    else{d.moves.push(nm);log("Alta","Movimiento",`${nm.desc} · ${money(amount)}`)}
+    if(old){d.moves=d.moves.map(x=>x.id===id?nm:x);log("Edición","Movimiento",old.desc+" → "+nm.desc,$("moveReason").value.trim())}
+    else{
+      d.moves.push(nm);
+      const repeat=$("moveRepeat")?.value||"none";
+      if(repeat!=="none"){
+        d.recurring=Array.isArray(d.recurring)?d.recurring:[];
+        d.recurring.push({id:uid(),type:nm.type,date:date,nextDate:advanceRecurrence(date,repeat),repeat,amount,desc,cat:nm.cat,account:accountId,note:nm.note,active:true,created:now()});
+      }
+      log("Alta","Movimiento",nm.desc+" · "+money(amount));
+    }
     save();closeSheet();toast(old?"Actualizado":"Guardado");
     if(!old&&nm.type==="income"&&nm.amount>0)setTimeout(()=>openDistributeSheet(nm),400);
   };
@@ -2301,6 +2611,7 @@ function openBillForm(editId=null){
         <option value="none" ${b?.repeat==="none"?"selected":""}>Única</option>
         <option value="monthly" ${b?.repeat==="monthly"?"selected":""}>Mensual</option>
         <option value="weekly" ${b?.repeat==="weekly"?"selected":""}>Semanal</option>
+        <option value="biweekly" ${b?.repeat==="biweekly"?"selected":""}>Cada quincena (15 días)</option>
         <option value="yearly" ${b?.repeat==="yearly"?"selected":""}>Anual</option>
       </select>
       <button class="btn" style="margin-top:20px">Guardar</button>
@@ -2495,42 +2806,56 @@ function openAccountForm(editId=null){
   };
 }
 
-function openHouseForm(editId=null){
-  const h=editId?d.house.find(x=>x.id===editId):null;
-  openSheet(`
-    <h3>${h?"Editar gasto":"Gasto compartido del hogar"}</h3>
-    <form id="houseForm">
-      <input type="hidden" id="houseId" value="${h?.id||""}">
-      <label>Concepto</label>
-      <input id="houseName" required value="${h?safe(h.name):""}">
-      <div class="row">
-        <div><label>Total</label><input id="houseAmount" type="number" min="1" required value="${h?.amount||""}"></div>
-        <div><label>Pagaste</label><input id="housePaid" type="number" min="0" required value="${h?.paid||""}"></div>
-      </div>
-      <div class="row">
-        <div>
-          <label>Tu parte</label>
-          <select id="houseSplit">
-            ${[50,60,40,100,25,75].map(p=>`<option value="${p}" ${h?.split===p?"selected":""}>${p}%</option>`).join("")}
-          </select>
-        </div>
-        <div><label>Fecha</label><input id="houseDate" type="date" required max="${iso(today)}" value="${h?.date||iso(today)}"></div>
-      </div>
-      <button class="btn" style="margin-top:20px">Guardar</button>
-    </form>
-  `);
+function houseShares(h){
+  const total=Math.max(0,Number(h&&h.amount)||0);
+  let mine=Number.isSafeInteger(Number(h&&h.myShare))?Number(h.myShare):Math.round(total*Number(h&&h.split!==undefined?h.split:50)/100);
+  mine=Math.max(0,Math.min(total,mine));return {total:total,mine:mine,spouse:total-mine};
+}
+function houseSettled(h){
+  const mine=houseShares(h).mine,paid=Math.max(0,Number(h&&h.paidByMe!==undefined?h.paidByMe:h&&h.paid)||0);
+  const repayments=(Array.isArray(h&&h.repayments)?h.repayments:[]).reduce((sum,p)=>sum+(p.direction==="paid"?-1:1)*Math.max(0,Number(p.amount)||0),0);
+  return paid-mine-repayments;
+}
+function openHouseForm(editId=null,templateName=null){
+  const h=editId?d.house.find(x=>x.id===editId):null,sh=h?houseShares(h):{mine:0,spouse:0};
+  const mode=h&&h.splitMode?h.splitMode:(h&&Number(h.split??50)!==50?"custom":"equal");
+  const payer=h&&h.payer?h.payer:"me",accountId=h&&h.accountId?h.accountId:(d.accounts[0]?d.accounts[0].id:"");
+  const accountOptions=d.accounts.map(a=>'<option value="'+safe(a.id)+'" '+(accountId===a.id?"selected":"")+'>'+safe(a.name)+'</option>').join("");
+  openSheet('<h3>'+(h?"Editar gasto":"Gasto compartido del hogar")+'</h3><p class="hint">Escoge cómo se reparte. No necesitas calcular porcentajes.</p>'+
+    '<form id="houseForm"><input type="hidden" id="houseId" value="'+(h?h.id:"")+'"><label>Concepto</label><input id="houseName" required value="'+(h?safe(h.name):safe(templateName||""))+'" placeholder="Arriendo, mercado, servicios…">'+
+    '<label>Valor total (COP)</label><input id="houseAmount" type="number" inputmode="numeric" min="1" step="1" required value="'+(h?h.amount:"")+'">'+
+    '<label>¿Cómo se reparte?</label><select id="houseMode"><option value="equal" '+(mode==="equal"?"selected":"")+'>Mitad y mitad</option><option value="me" '+(mode==="me"?"selected":"")+'>Yo asumo todo</option><option value="spouse" '+(mode==="spouse"?"selected":"")+'>Mi esposa asume todo</option><option value="custom" '+(mode==="custom"?"selected":"")+'>Valores específicos</option></select>'+
+    '<div id="houseCustomShares" class="row" style="display:'+(mode==="custom"?"grid":"none")+'"><div><label>Mi parte (COP)</label><input id="houseMyShare" type="number" inputmode="numeric" min="0" step="1" value="'+sh.mine+'"></div><div><label>Parte de mi esposa (COP)</label><input id="houseSpouseShare" type="number" inputmode="numeric" min="0" step="1" value="'+sh.spouse+'"></div></div>'+
+    '<label>¿Quién pagó?</label><select id="housePayer"><option value="me" '+(payer==="me"?"selected":"")+'>Yo pagué todo</option><option value="spouse" '+(payer==="spouse"?"selected":"")+'>Mi esposa pagó todo</option><option value="both" '+(payer==="both"?"selected":"")+'>Pagamos entre los dos</option></select>'+
+    '<div id="housePaidSplit" class="row" style="display:'+(payer==="both"?"grid":"none")+'"><div><label>Pagué yo (COP)</label><input id="housePaidByMe" type="number" inputmode="numeric" min="0" step="1" value="'+(h&&h.paidByMe!==undefined?h.paidByMe:(payer==="me"?(h?h.amount:""):"0"))+'"></div><div><label>Pagó mi esposa (COP)</label><input id="housePaidBySpouse" type="number" inputmode="numeric" min="0" step="1" value="'+(h&&h.paidBySpouse!==undefined?h.paidBySpouse:(payer==="spouse"?(h?h.amount:""):"0"))+'"></div></div>'+
+    '<div id="houseAccountWrap" style="display:'+(payer==="spouse"?"none":"block")+'"><label>Cuenta desde la que pagaste tú</label><select id="houseAccount">'+accountOptions+'</select><p class="hint">Se registra la salida real de tu cuenta.</p></div>'+
+    '<label>Fecha del gasto</label><input id="houseDate" type="date" required value="'+(h?h.date:iso(today))+'"><div id="housePreview" class="card" style="margin-top:12px;padding:12px"></div><button class="btn" style="margin-top:20px">Guardar gasto</button></form>');
+  const modeSel=$("houseMode"),payerSel=$("housePayer"),amountInput=$("houseAmount");
+  const preview=()=>{
+    const total=Number(amountInput.value)||0,m=modeSel.value,p=payerSel.value;
+    const mine=m==="me"?total:m==="spouse"?0:m==="custom"?(Number($("houseMyShare").value)||0):Math.floor(total/2);
+    const spouse=m==="custom"?(Number($("houseSpouseShare").value)||0):total-mine,paidMe=p==="me"?total:p==="spouse"?0:(Number($("housePaidByMe").value)||0),balance=paidMe-mine;
+    $("houseCustomShares").style.display=m==="custom"?"grid":"none";$("housePaidSplit").style.display=p==="both"?"grid":"none";$("houseAccountWrap").style.display=p==="spouse"?"none":"block";
+    $("housePreview").innerHTML='<div class="s">Tu parte: '+money(mine)+'</div><div class="s">Parte de ella: '+money(spouse)+'</div><div class="s" style="margin-top:8px">'+(balance>0?"Ella te debe "+money(balance):balance<0?"Tú le debes "+money(-balance):"El gasto quedó equilibrado")+'</div>';
+  };
+  modeSel.onchange=preview;payerSel.onchange=preview;amountInput.oninput=preview;
+  ["houseMyShare","houseSpouseShare","housePaidByMe","housePaidBySpouse"].forEach(id=>$(id).addEventListener("input",preview));preview();
   $("houseForm").onsubmit=e=>{
-    e.preventDefault();
-    const id=$("houseId").value;
-    const nh={id:id||uid(),name:$("houseName").value.trim(),amount:Number($("houseAmount").value),
-      paid:Number($("housePaid").value),split:Number($("houseSplit").value),date:$("houseDate").value};
-    if(!Number.isSafeInteger(nh.amount)||nh.amount<=0){toast("El total debe ser un valor entero en COP mayor que cero");return}
-    if(!Number.isSafeInteger(nh.paid)||nh.paid<0||nh.paid>nh.amount){toast("El valor que pagaste debe ser un entero entre $0 y el total del gasto");return}
-    if(!Number.isFinite(nh.split)||nh.split<0||nh.split>100){toast("El porcentaje de tu parte no es válido");return}
-    if(!nh.name){toast("Escribe el concepto del gasto");return}
-    if(!nh.date||Number.isNaN(new Date(nh.date+"T12:00:00").getTime())||nh.date>iso(today)){toast("Revisa la fecha del gasto");return}
+    e.preventDefault();const id=$("houseId").value,total=Number(amountInput.value),m=modeSel.value,p=payerSel.value;
+    if(!Number.isSafeInteger(total)||total<=0){toast("El total debe ser un entero mayor que cero");return}
+    const mine=m==="me"?total:m==="spouse"?0:m==="custom"?Number($("houseMyShare").value):Math.floor(total/2),spouse=m==="custom"?Number($("houseSpouseShare").value):total-mine;
+    if(!Number.isSafeInteger(mine)||!Number.isSafeInteger(spouse)||mine<0||spouse<0||mine+spouse!==total){toast("Las partes deben sumar exactamente el total");return}
+    const paidMe=p==="me"?total:p==="spouse"?0:Number($("housePaidByMe").value),paidSpouse=p==="spouse"?total:p==="me"?0:Number($("housePaidBySpouse").value);
+    if(!Number.isSafeInteger(paidMe)||!Number.isSafeInteger(paidSpouse)||paidMe<0||paidSpouse<0||paidMe+paidSpouse!==total){toast("Lo pagado por ambos debe sumar exactamente el total");return}
+    const date=$("houseDate").value,account=p==="spouse"?"":$("houseAccount").value;
+    if(!date||Number.isNaN(new Date(date+"T12:00:00").getTime())){toast("Revisa la fecha");return}
+    if(paidMe>0&&!d.accounts.some(a=>a.id===account)){toast("Selecciona una cuenta válida");return}
+    const old=id?d.house.find(x=>x.id===id):null,nh={...(old||{}),id:id||uid(),name:$("houseName").value.trim(),amount:total,myShare:mine,split:total?mine/total*100:50,splitMode:m,payer:p,paidByMe:paidMe,paidBySpouse:paidSpouse,accountId:account,date:date,repayments:Array.isArray(old&&old.repayments)?old.repayments:[]};
+    if(!nh.name){toast("Escribe el concepto");return}
+    d.moves=d.moves.filter(x=>!(x.houseCashMovement&&x.houseExpenseId===nh.id));
+    if(paidMe>0)d.moves.push({id:uid(),type:"expense",date:date,desc:"Hogar: "+nh.name,amount:paidMe,cat:"Hogar",account:account,note:"Gasto compartido del hogar",houseCashMovement:true,houseExpenseId:nh.id,created:now()});
     if(id)d.house=d.house.map(x=>x.id===id?nh:x);else d.house.push(nh);
-    log(id?"Edición":"Alta","Hogar",nh.name);save();closeSheet();toast(h?"Actualizado":"Guardado");
+    log(id?"Edición":"Alta","Hogar",nh.name);save();closeSheet();toast(h?"Gasto actualizado":"Gasto guardado");
   };
 }
 
@@ -2593,7 +2918,8 @@ function applyDebtPayment(id,v,accountId,paidDate){
     // Así el saldo de la cuenta refleja el pago y no se pierde el historial del movimiento.
     debt.amount=Number(debt.amount)-v;
     if(Number(debt.installment||0)>0 && v>=Number(debt.installment||0) && Number(debt.terms||0)>Number(debt.paidTerms||0)){
-      debt.paidTerms=Number(debt.paidTerms||0)+1;
+      const coveredTerms=Math.floor(v/Number(debt.installment||0));
+      debt.paidTerms=Math.min(Number(debt.terms||0),Number(debt.paidTerms||0)+coveredTerms);
     }
     // Si se abonó al menos una cuota mensual, avanza el próximo vencimiento un mes.
     // Se limita al último día del mes para evitar saltos al pagar el día 29, 30 o 31.
@@ -2692,10 +3018,10 @@ function completeBillPayment(billId,accountId){
     const lastDay=new Date(next.getFullYear(),next.getMonth()+1,0,12).getDate();
     next.setDate(Math.min(wantedDay,lastDay));
     d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:"monthly",paid:false});
-  }else if(current.repeat==="weekly"){
+  }else if(current.repeat==="weekly"||current.repeat==="biweekly"){
     const next=new Date(current.due+"T12:00:00");
-    next.setDate(next.getDate()+7);
-    d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:"weekly",paid:false});
+    next.setDate(next.getDate()+(current.repeat==="biweekly"?15:7));
+    d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:current.repeat,paid:false});
   }else if(current.repeat==="yearly"){
     const next=new Date(current.due+"T12:00:00");
     next.setFullYear(next.getFullYear()+1);
@@ -2858,6 +3184,47 @@ $("export").onclick=()=>{
   a.download=`control_financiero_${iso(today)}.json`;a.click();
   toast("Copia exportada");
 };
+async function deriveBackupKey(password,salt){
+  const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:310000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+function bytesToB64(bytes){let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary)}
+function b64ToBytes(value){const binary=atob(value);return Uint8Array.from(binary,c=>c.charCodeAt(0))}
+$("exportEncrypted").onclick=async()=>{
+  const password=prompt("Crea una contraseña para cifrar la copia. Guárdala: no se puede recuperar si la olvidas.");
+  if(password===null)return;
+  if(password.length<10){toast("Usa una contraseña de al menos 10 caracteres");return}
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const key=await deriveBackupKey(password,salt);
+    const plain=new TextEncoder().encode(JSON.stringify(d));
+    const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,plain);
+    const payload={format:"mcf-encrypted-backup-v1",kdf:"PBKDF2-SHA-256",iterations:310000,cipher:"AES-256-GCM",salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(new Uint8Array(cipher))};
+    const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mi-control-financiero-cifrado-"+iso(today)+".mcf";a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast("Copia cifrada exportada");
+  }catch(err){console.error(err);toast("No se pudo cifrar la copia")}
+};
+$("importEncryptedBtn").onclick=()=>$("importEncrypted").click();
+$("importEncrypted").onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{
+    const payload=JSON.parse(await file.text());
+    if(payload.format!=="mcf-encrypted-backup-v1"||payload.kdf!=="PBKDF2-SHA-256"||payload.cipher!=="AES-256-GCM")throw new Error("Formato no compatible");
+    const password=prompt("Ingresa la contraseña usada al crear esta copia cifrada.");
+    if(password===null)return;
+    const key=await deriveBackupKey(password,b64ToBytes(payload.salt));
+    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64ToBytes(payload.iv)},key,b64ToBytes(payload.data));
+    const parsed=JSON.parse(new TextDecoder().decode(plain));
+    const required=["moves","accounts","transfers","budgets","bills","debts","goals","house","audit"];
+    if(!parsed||typeof parsed!=="object"||required.some(k=>!Array.isArray(parsed[k])))throw new Error("Faltan secciones");
+    if(parsed.moves.some(m=>!m||!m.id||!["income","expense"].includes(m.type)||!Number.isSafeInteger(Number(m.amount))||Number(m.amount)<=0)||
+       parsed.accounts.some(a=>!a||!a.id||!String(a.name||"").trim()||!Number.isFinite(Number(a.opening||0))))throw new Error("Hay registros inválidos");
+    m3Confirm({title:"Restaurar copia cifrada",message:"Se reemplazarán los datos actuales por el contenido de esta copia. Exporta primero otra copia si necesitas conservar los datos actuales.",confirmLabel:"Restaurar",danger:true},()=>{
+      d=parsed;d.recurring=Array.isArray(d.recurring)?d.recurring:[];save();closeSheet();render();toast("Copia cifrada restaurada");e.target.value="";
+    });
+  }catch(err){console.error(err);toast("No se pudo descifrar la copia. Verifica la contraseña y el archivo.")}
+};
 function runIntegrityCheck(){
   const issues=[];
   const ids=new Set();
@@ -2939,6 +3306,24 @@ function runSmokeTests(){
   test("Disponible calculado",Number.isFinite(computeAvailable()),"El disponible debe ser un número finito.");
   test("Estimación diaria",Number.isFinite(computeSafeDaily()),"La estimación debe ser un número finito.");
   test("IDs de cuentas",d.accounts.every(a=>!!a.id),"Cada cuenta debe tener identificador.");
+  test("Reparto hogar suma el total",d.house.every(h=>{const z=houseShares(h);return z.mine>=0&&z.spouse>=0&&z.mine+z.spouse===z.total;}),"Valida las partes registradas de cada gasto.");
+  test("Proyección 30 días produce saldo finito",Number.isFinite(financialProjection(30).balance));
+  test("Proyección 60 días produce saldo finito",Number.isFinite(financialProjection(60).balance));
+  test("Distribución de sueldo respeta compromisos y no genera valores negativos",(()=>{const p=buildSalaryDistribution(2000000);return p.obligations>=0&&p.emergency>=0&&p.savingsTarget>=0&&p.flexible>=0})());
+  test("GMF 4x1000 calcula 4.000 por millón",Math.round(1000000*0.004)===4000);
+  test("Prima simplificada para 180 días equivale a la mitad de la base",Math.round(1000000*180/360)===500000);
+  test("Hogar: plantilla abre el formulario",document.querySelectorAll("[data-house-template]").length>=3);
+  test("Hogar: saldo con pagos parciales",houseSettled({amount:100000,myShare:60000,paidByMe:40000,paidBySpouse:60000,repayments:[]})===-20000);
+  test("Hogar: reembolso recibido reduce saldo a favor",houseSettled({amount:100000,myShare:50000,paidByMe:100000,repayments:[{amount:20000,direction:"received"}]})===30000);
+  test("Hogar: pago a pareja reduce deuda",houseSettled({amount:100000,myShare:50000,paidByMe:0,repayments:[{amount:20000,direction:"paid"}]})===-30000);
+  test("Hogar: exportación CSV y resumen compartible",typeof exportHouseSummaryCsv==="function"&&typeof shareHouseSummaryText==="function");
+  test("Hogar: si pagas todo, calcula lo que ella debe",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[]})===500000);
+  test("Hogar: los abonos reducen el saldo",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[{amount:200000}]})===300000);
+  test("Hogar: si ella paga todo, calcula lo que tú debes",houseSettled({amount:1000000,myShare:500000,paidByMe:0,repayments:[]})===-500000);
+  test("Recurrencia mensual conserva el fin de mes",advanceRecurrence("2026-01-31","monthly")==="2026-02-28");
+  test("Recurrencia quincenal avanza 15 días",advanceRecurrence("2026-01-01","biweekly")==="2026-01-16");
+  test("CSV respeta comas dentro de comillas",parseCsvText('"Fecha","Descripción"\n"2026-01-01","Mercado, tienda"',",").length===2);
+  test("Respaldo cifrado disponible",!!$("exportEncrypted")&&!!$("importEncryptedBtn"));
   const passed=results.filter(x=>x.ok).length;
   const out=$("smokeTestReport");
   if(out){
@@ -2947,6 +3332,111 @@ function runSmokeTests(){
   return results;
 }
 $("runSmokeTests").onclick=()=>runSmokeTests();
+
+/* ============ INTELIGENCIA FINANCIERA C ============ */
+function dateAfterDays(days){
+  const dt=new Date();dt.setHours(12,0,0,0);dt.setDate(dt.getDate()+days);
+  return iso(dt);
+}
+function monthDiffKey(date){
+  const dte=new Date(date+"T12:00:00"),nowDate=new Date();nowDate.setHours(12,0,0,0);
+  return (nowDate.getFullYear()-dte.getFullYear())*12+(nowDate.getMonth()-dte.getMonth());
+}
+function historicalMonthlyNet(){
+  const buckets=new Map();
+  (d.moves||[]).forEach(m=>{
+    if(!m.date||m.date>=iso(today)||m.houseCashMovement||m.houseReimbursement||m.recurringId)return;
+    const age=monthDiffKey(m.date);if(age<1||age>3)return;
+    const key=m.date.slice(0,7);if(!buckets.has(key))buckets.set(key,{income:0,expense:0});
+    const b=buckets.get(key);if(m.type==="income")b.income+=Number(m.amount)||0;else if(m.type==="expense")b.expense+=Number(m.amount)||0;
+  });
+  const months=[...buckets.values()];
+  return {income:months.length?months.reduce((a,b)=>a+b.income,0)/months.length:0,expense:months.length?months.reduce((a,b)=>a+b.expense,0)/months.length:0,months:months.length};
+}
+function financialProjection(days){
+  const start=new Date();start.setHours(12,0,0,0);
+  const end=new Date(start);end.setDate(end.getDate()+days);
+  let expectedIncome=0,expectedExpense=0;
+  const from=iso(start),to=iso(end);
+  (d.recurring||[]).forEach(rule=>{
+    if(rule.active===false||!rule.nextDate||!Number(rule.amount))return;
+    let dt=new Date(rule.nextDate+"T12:00:00"),guard=0;
+    while(dt<=end&&guard++<240){
+      if(dt>=start){if(rule.type==="income")expectedIncome+=Number(rule.amount)||0;else expectedExpense+=Number(rule.amount)||0;}
+      const next=advanceRecurrence(iso(dt),rule.repeat);if(!next||next<=iso(dt))break;dt=new Date(next+"T12:00:00");
+    }
+  });
+  const bills=(d.bills||[]).filter(b=>!b.paid&&b.due&&b.due>=from&&b.due<=to);
+  const billAmount=bills.reduce((sum,b)=>sum+(Number(b.amount)||0),0);
+  const debtItems=(d.debts||[]).filter(x=>Number(x.amount)>0&&Number(x.installment)>0&&x.due&&x.due>=from&&x.due<=to);
+  const debtAmount=debtItems.reduce((sum,x)=>sum+Math.min(Number(x.amount),Number(x.installment)),0);
+  // Los gastos variables se proyectan con el promedio de hasta 3 meses cerrados;
+  // las recurrencias se calculan aparte para no duplicar sus movimientos históricos.
+  const hist=historicalMonthlyNet();
+  const variableDays=days;
+  const variableNet=(hist.income-hist.expense)*variableDays/30;
+  const available=computeAvailable();
+  const balance=available+expectedIncome-expectedExpense-billAmount-debtAmount+variableNet;
+  return {days,available,expectedIncome,expectedExpense,billAmount,debtAmount,variableNet,balance,histMonths:hist.months,bills:bills.length,debtItems:debtItems.length};
+}
+function renderFinancialProjection(){
+  const out=$("financialProjectionReport");if(!out)return;
+  const p30=financialProjection(30),p60=financialProjection(60);
+  const card=p=>'<div class="card" style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>En '+p.days+' días</strong><strong style="color:'+(p.balance<0?'var(--danger)':'var(--success)')+'">'+money(p.balance)+'</strong></div><div class="hint" style="margin-top:6px">Disponible hoy: '+money(p.available)+' · Ingresos recurrentes: '+money(p.expectedIncome)+' · Gastos recurrentes: '+money(p.expectedExpense)+'</div><div class="hint">Facturas pendientes: '+money(p.billAmount)+' · Cuotas estimadas: '+money(p.debtAmount)+'</div><div class="hint">Ajuste por tendencia histórica: '+money(p.variableNet)+'</div></div>';
+  out.innerHTML='<p class="hint">Promedio histórico calculado con '+p30.histMonths+' mes(es) cerrado(s) con movimientos no recurrentes. '+(p30.histMonths<3?'Hay pocos datos; la proyección puede ser menos precisa.':'')+'</p>'+card(p30)+card(p60)+'<p class="hint" style="margin-top:8px">Las facturas y cuotas se descuentan según sus fechas registradas. Verifica que no estén duplicadas como otros compromisos.</p>';
+  return {p30,p60};
+}
+$("runFinancialProjection").onclick=renderFinancialProjection;
+function buildSalaryDistribution(income){
+  const nowKey=iso(today),limit=dateAfterDays(30);
+  const bills=(d.bills||[]).filter(b=>!b.paid&&b.due&&b.due>=nowKey&&b.due<=limit).reduce((a,b)=>a+Math.max(0,Number(b.amount)||0),0);
+  const debts=(d.debts||[]).filter(x=>Number(x.amount)>0&&Number(x.installment)>0&&x.due&&x.due>=nowKey&&x.due<=limit).reduce((a,x)=>a+Math.min(Number(x.amount),Number(x.installment)),0);
+  const budgetCaps=(d.budgets||[]).reduce((a,b)=>a+Math.max(0,Number(b.limit)||0),0);
+  const obligations=bills+debts;
+  const afterObligations=income-obligations;
+  const emergency= Math.max(0,afterObligations)*0.10;
+  const goalRoom=Math.max(0,afterObligations-emergency);
+  const savingsTarget=Math.min(goalRoom,Math.max(0,Math.round(income*0.10)));
+  const flexible=Math.max(0,afterObligations-emergency-savingsTarget);
+  return {income,bills,debts,obligations,afterObligations,emergency,savingsTarget,flexible,budgetCaps};
+}
+function renderSalaryPlan(){
+  const out=$("salaryPlanReport");if(!out)return;
+  const entered=$("salaryPlanIncome").value.trim(),hist=historicalMonthlyNet();
+  const income=entered===""?Math.round(hist.income):Number(entered);
+  if(!Number.isSafeInteger(income)||income<=0){out.innerHTML='<p class="hint">Ingresa tu sueldo neto mensual o registra ingresos de meses anteriores para estimar un valor.</p>';return}
+  const p=buildSalaryDistribution(income);
+  const rows=[
+    ["1. Facturas y servicios próximos",p.bills],
+    ["2. Cuotas de deudas próximas",p.debts],
+    ["3. Reserva inicial (10% de lo restante)",p.emergency],
+    ["4. Ahorro sugerido",p.savingsTarget],
+    ["5. Gastos variables y otros",p.flexible]
+  ];
+  out.innerHTML='<div class="card"><div class="hint">Ingreso usado para el plan</div><strong style="font-size:20px">'+money(income)+'</strong><div class="hint">'+(entered===""?"Estimado con ingresos históricos.":"Valor ingresado manualmente.")+'</div></div>'+
+    rows.map(r=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><span>'+safe(r[0])+'</span><strong>'+money(r[1])+'</strong></div>').join("")+
+    '<p class="hint" style="margin-top:8px">'+(p.afterObligations<0?'Alerta: tus compromisos superan el sueldo indicado. No asignes dinero a gastos flexibles hasta revisar las fechas, montos y obligaciones.':'Propuesta orientativa, no una orden de pago. Ajusta los porcentajes según tus gastos reales y conserva un fondo de emergencia.')+'</p>';
+}
+$("runSalaryPlan").onclick=renderSalaryPlan;
+function runColombiaFinancialCalc(){
+  const type=$("colombiaCalcType").value,amount=Number($("colombiaCalcAmount").value),days=Math.max(0,Math.min(360,Number($("colombiaCalcDays").value)||0)),rate=Math.max(0,Number($("colombiaCalcRate").value)||0);
+  const out=$("colombiaCalcResult");
+  if(!Number.isFinite(amount)||amount<0){out.textContent="Ingresa una base válida.";return}
+  let result=0,label="";
+  if(type==="4x1000"){result=amount*0.004;label="GMF estimado (0,4%)"; }
+  else if(type==="prima"){result=amount*days/360;label="Prima estimada"; }
+  else if(type==="cesantias"){result=amount*days/360;label="Cesantías estimadas"; }
+  else if(type==="cesantiasInterest"){result=amount*days*0.12/360;label="Intereses de cesantías estimados (12% anual proporcional)"; }
+  else if(type==="ea"){result=amount*(Math.pow(1+rate/100,1/12)-1);label="Interés efectivo equivalente a un mes"; }
+  out.innerHTML='<div class="card"><div class="hint">'+safe(label)+'</div><strong style="font-size:22px">'+money(Math.round(result))+'</strong><p class="hint" style="margin-top:8px">'+(type==="4x1000"?"Estimación sin aplicar posibles exenciones o reglas particulares de la cuenta.":type==="prima"||type==="cesantias"||type==="cesantiasInterest"?"Estimación simplificada; puede variar según salario base, auxilios aplicables, días reconocidos y condiciones legales. No reemplaza una liquidación laboral.":"Equivalencia matemática de una tasa efectiva anual a un periodo mensual; no incluye comisiones, impuestos ni cambios de tasa.")+'</p></div>';
+}
+$("colombiaCalcType").addEventListener("change",()=>{
+  const type=$("colombiaCalcType").value;
+  $("colombiaDaysWrap").style.display=["prima","cesantias","cesantiasInterest"].includes(type)?"block":"none";
+  $("colombiaRateWrap").style.display=type==="ea"?"block":"none";
+});
+$("runColombiaCalc").onclick=runColombiaFinancialCalc;
+
 function calculatePaymentPriorities(){
   const todayDate=new Date();
   todayDate.setHours(12,0,0,0);
@@ -3028,6 +3518,98 @@ function buildWeeklyPlan(){
   </div>`;
 }
 $("buildWeeklyPlan").onclick=()=>buildWeeklyPlan();
+function reminderId(key){
+  let id=0;
+  for(let i=0;i<key.length;i++)id=(id*31+key.charCodeAt(i))%2000000000;
+  return Math.max(1,id);
+}
+async function scheduleDeviceReminders(options={}){
+  const status=$("notificationStatus");
+  const requestPermission=options.requestPermission!==false;
+  const quiet=options.quiet===true;
+  const plugin=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin){
+    if(status)status.textContent="Las notificaciones programadas requieren la APK Android. En la web, los avisos solo se actualizan al abrir la aplicación.";
+    if(!quiet)toast("Para programar avisos necesitas la APK Android");
+    return false;
+  }
+  try{
+    let permission=await plugin.checkPermissions();
+    if(permission.display!=="granted"&&requestPermission)permission=await plugin.requestPermissions();
+    if(permission.display!=="granted"){
+      if(status)status.textContent="Permiso no concedido. Activa las notificaciones en los ajustes de Android y vuelve a intentarlo.";
+      if(!quiet)toast("No se concedió permiso para notificaciones");
+      return false;
+    }
+    const pending=[],ownIds=new Set();
+    const add=(key,title,body,when)=>{
+      const at=new Date(when);
+      if(Number.isNaN(at.getTime())||at<=new Date())return;
+      const id=reminderId(key);
+      if(ownIds.has(id))return;
+      ownIds.add(id);
+      pending.push({id,title,body,schedule:{at,allowWhileIdle:true}});
+    };
+    const atHour=(date,days,hour=9)=>{
+      const base=new Date(date+"T12:00:00");
+      if(Number.isNaN(base.getTime()))return new Date(NaN);
+      base.setDate(base.getDate()+days);base.setHours(hour,0,0,0);return base;
+    };
+    const todayKey=iso(new Date());
+    d.bills.filter(b=>!b.paid&&b.due).forEach(b=>{
+      [-3,-1,0].forEach(days=>add("bill-"+b.id+"-"+days,"Recordatorio de factura",
+        b.name+" · "+money(b.amount)+(days===0?" vence hoy":days<0?" vence en "+Math.abs(days)+" día(s)":" vence"),atHour(b.due,days)));
+      if(b.due<todayKey){
+        // Programa 30 días por delante; al abrir la app se renueva la ventana hasta pagar.
+        for(let n=1;n<=30;n++)add("overdue-"+b.id+"-"+n,"Factura vencida",
+          b.name+" · pendiente "+money(b.amount),atHour(todayKey,n));
+      }
+    });
+    d.debts.filter(x=>Number(x.amount||0)>0&&x.due).forEach(x=>{
+      [-3,-1,0].forEach(days=>add("debt-"+x.id+"-"+days,"Recordatorio de deuda",
+        x.name+" · cuota "+money(x.installment||0),atHour(x.due,days)));
+      if(x.due<todayKey){
+        for(let n=1;n<=30;n++)add("debt-overdue-"+x.id+"-"+n,"Cuota vencida",
+          x.name+" · revisa el pago",atHour(todayKey,n));
+      }
+    });
+    // Cancela solo avisos que esta función programó; no toca notificaciones de otros módulos.
+    let previousIds=[];
+    try{previousIds=JSON.parse(localStorage.getItem("mcf_reminder_ids")||"[]")}catch(e){}
+    if(previousIds.length)await plugin.cancel({notifications:previousIds.map(id=>({id:Number(id)}))});
+    if(pending.length)await plugin.schedule({notifications:pending});
+    localStorage.setItem("mcf_reminder_ids",JSON.stringify(Array.from(ownIds)));
+    localStorage.setItem("mcf_reminders_enabled","1");
+    if(status)status.textContent="Recordatorios activos: "+pending.length+" avisos programados. Las facturas y cuotas vencidas se programan por 30 días y se renuevan al abrir la app o guardar cambios.";
+    if(!quiet)toast("Recordatorios actualizados");
+    return true;
+  }catch(err){
+    console.error("No se pudieron programar recordatorios",err);
+    if(status)status.textContent="No se pudieron programar. Revisa el permiso de notificaciones y la configuración de batería de Android.";
+    if(!quiet)toast("No se pudieron programar los recordatorios");
+    return false;
+  }
+}
+$("enableNotifications").onclick=()=>scheduleDeviceReminders({requestPermission:true});
+function showGettingStarted(){
+  openSheet(`<h3>Bienvenido a Mi Control Financiero</h3>
+    <p class="hint">Una guía corta para empezar. Tus datos se guardan en este dispositivo.</p>
+    <div class="card" style="margin-top:12px">
+      <strong>1. Crea una cuenta</strong><p class="hint">Registra efectivo, banco o billetera. Es necesaria para asociar cada ingreso y gasto.</p>
+      <strong>2. Registra movimientos</strong><p class="hint">Pulsa el botón Crear y elige Gasto o Ingreso. Escribe el valor en pesos sin puntos y revisa el valor formateado antes de guardar.</p>
+      <strong>3. Organiza pagos</strong><p class="hint">En Organizar registra facturas, fechas de vencimiento, deudas y metas de ahorro.</p>
+      <strong>4. Revisa tu dinero</strong><p class="hint">Inicio muestra el resumen; Análisis presenta informes y proyecciones.</p>
+      <strong>5. Activa recordatorios</strong><p class="hint">En esta sección de herramientas, activa los recordatorios y acepta el permiso de Android. Comprueba también que el sistema no restrinja la batería de la app.</p>
+      <strong>6. Protege tus datos</strong><p class="hint">Exporta una copia de seguridad periódicamente. El PIN bloquea la pantalla, pero no cifra por sí solo todos los datos locales.</p>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px"><input id="dontShowGuide" type="checkbox" style="width:20px;min-height:20px"> No mostrar al iniciar</label>
+    <button class="btn" id="closeGettingStarted" style="margin-top:12px">Entendido</button>`);
+  $("closeGettingStarted").onclick=()=>{
+    if($("dontShowGuide").checked)localStorage.setItem("mcf_onboarding_seen","1");
+    closeSheet();
+  };
+}
+$("openGettingStarted").onclick=showGettingStarted;
 function refreshDueStatus(){
   const out=$("dueStatusReport");
   if(!out)return;
@@ -3057,7 +3639,7 @@ $("refreshDueStatus").onclick=refreshDueStatus;
 function runReleaseCheck(){
   const out=$("releaseCheckReport");
   const checks=[
-    {name:"Secciones de datos principales",ok:!!d&&["moves","accounts","transfers","budgets","bills","debts","goals","house","audit"].every(k=>Array.isArray(d[k]))},
+    {name:"Secciones de datos principales",ok:!!d&&["moves","accounts","transfers","budgets","bills","debts","goals","house","audit","recurring"].every(k=>Array.isArray(d[k]))},
     {name:"Hay al menos una cuenta",ok:d.accounts.length>0,info:"Necesaria para registrar ingresos y gastos."},
     {name:"Saldos calculables",ok:d.accounts.every(a=>Number.isFinite(bal(a)))},
     {name:"Respaldo JSON disponible para exportar",ok:!!$("export")},
@@ -3120,6 +3702,72 @@ $("restoreAutoBackup").onclick=()=>{
 updateAutoBackupStatus();
 // Escapa todos los campos CSV, incluidos comas, comillas y saltos de línea.
 const csvCell = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+function parseCsvText(text,delimiter){
+  const rows=[];let row=[],field="",quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}
+    else if(c==='"')quoted=true;
+    else if(c===delimiter){row.push(field);field=""}
+    else if(c==="\n"){row.push(field.replace(/\r$/,""));rows.push(row);row=[];field=""}
+    else field+=c;
+  }
+  if(field.length||row.length){row.push(field.replace(/\r$/,""));rows.push(row)}
+  return rows.filter(r=>r.some(v=>String(v).trim()!==""));
+}
+function normalizeCsvHeader(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"")}
+function parseCsvMoney(v){
+  let x=String(v??"").trim().replace(/[\s$]/g,"");
+  if(!x)return 0;
+  if(x.includes(",")&&x.includes(".")){if(x.lastIndexOf(",")>x.lastIndexOf("."))x=x.replace(/\./g,"").replace(",",".");else x=x.replace(/,/g,"")}
+  else if(x.includes(",")){const parts=x.split(",");x=parts[parts.length-1].length===3?x.replace(/,/g,""):x.replace(",",".")}
+  else if((x.match(/\./g)||[]).length>1)x=x.replace(/\./g,"");
+  else if(x.includes(".")&&x.split(".")[1].length===3)x=x.replace(".","");
+  return Number(x.replace(/[^0-9.-]/g,""))||0;
+}
+$("importBankCsvBtn").onclick=()=>{if(!d.accounts.length){toast("Crea primero una cuenta para importar movimientos");return}$("importBankCsv").click()};
+$("importBankCsv").onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{
+    const text=await file.text(),delimiter=(text.split("\n")[0].split(";").length>text.split("\n")[0].split(",").length)?";":",";
+    const rows=parseCsvText(text,delimiter);if(rows.length<2)throw new Error("El CSV no tiene filas de datos");
+    const headers=rows[0].map(normalizeCsvHeader);
+    const find=names=>headers.findIndex(h=>names.includes(h));
+    const dateIdx=find(["fecha","date","fechamovimiento","transactiondate","bookingdate"]);
+    const descIdx=find(["descripcion","concepto","detalle","description","merchant","comercio","referencia","movimiento"]);
+    const amountIdx=find(["valor","monto","importe","amount","transactionamount","valorcop","valortransaccion"]);
+    const typeIdx=find(["tipo","type","tipomovimiento","transactiontype","naturaleza"]);
+    const debitIdx=find(["debito","debitos","debit","retiro","retiros","cargo","cargos"]);
+    const creditIdx=find(["credito","credit","abono","abonos","deposito","depositos"]);
+    const categoryIdx=find(["categoria","category"]);
+    if(dateIdx<0||descIdx<0||(amountIdx<0&&debitIdx<0&&creditIdx<0))throw new Error("No detecté las columnas necesarias. El CSV debe incluir fecha, descripción y valor o columnas débito/crédito.");
+    const parseDate=v=>{
+      const x=String(v||"").trim();let m=x.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if(m)return m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0");
+      m=x.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if(m)return m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
+      return "";
+    };
+    const preview=[];
+    rows.slice(1).forEach(r=>{
+      const date=parseDate(r[dateIdx]);const desc=String(r[descIdx]||"").trim();
+      let amount=amountIdx>=0?parseCsvMoney(r[amountIdx]):0;let type="expense";
+      if(debitIdx>=0||creditIdx>=0){
+        const debit=debitIdx>=0?Math.abs(parseCsvMoney(r[debitIdx])):0,credit=creditIdx>=0?Math.abs(parseCsvMoney(r[creditIdx])):0;
+        if(credit>0&&debit===0){amount=credit;type="income"}else if(debit>0){amount=debit;type="expense"}
+      }else if(typeIdx>=0&&/ingreso|abono|credito|deposit|consignacion|credit/i.test(r[typeIdx]||""))type="income";
+      else if(amount<0){amount=Math.abs(amount);type="income"}
+      const account=d.accounts[0];
+      if(date&&desc&&Number.isSafeInteger(Math.round(amount))&&amount>0&&account){
+        const duplicate=d.moves.some(m=>m.date===date&&m.type===type&&Number(m.amount)===Math.round(amount)&&String(m.desc||"").trim().toLowerCase()===desc.toLowerCase());
+        if(!duplicate)preview.push({id:uid(),date,desc:desc.slice(0,100),type,amount:Math.round(amount),cat:categoryIdx>=0&&String(r[categoryIdx]||"").trim()?String(r[categoryIdx]).trim().slice(0,50):"Otros",account:account.id,note:"Importado desde CSV bancario",created:now()});
+      }
+    });
+    if(!preview.length){toast("No encontré movimientos nuevos válidos; revisa los encabezados y fechas");return}
+    openSheet('<h3>Importar movimientos</h3><p class="hint">Se encontraron '+preview.length+' movimiento(s) nuevo(s). Se usarán en la cuenta '+safe(d.accounts[0].name)+'. Los duplicados detectados se omiten.</p><div class="list" style="max-height:40vh;overflow:auto">'+preview.slice(0,12).map(m=>'<div class="item"><div class="main"><div class="t">'+safe(m.desc)+'</div><div class="s">'+fmt(m.date)+' · '+(m.type==="income"?"Ingreso":"Gasto")+'</div></div><div class="amt">'+money(m.amount)+'</div></div>').join("")+(preview.length>12?'<p class="hint">Y '+(preview.length-12)+' más…</p>':"")+'</div><button class="btn" id="confirmBankImport" style="margin-top:16px">Importar '+preview.length+' movimientos</button>');
+    $("confirmBankImport").onclick=()=>{d.moves.push(...preview);log("Importación","CSV bancario",preview.length+" movimientos importados");save();closeSheet();toast("Movimientos importados");e.target.value=""};
+  }catch(err){console.error(err);toast(err.message||"No se pudo leer el CSV")}
+};
 $("csv").onclick=()=>{
   // Un único CSV con filas identificadas por sección para poder abrirlo en Excel.
   const headers=["Sección","ID","Nombre/Descripción","Tipo","Fecha","Vencimiento","Valor/Saldo","Categoría","Cuenta","Estado","Periodicidad","Cuota","Cupo total","Día de pago","Detalle"];
@@ -3249,7 +3897,20 @@ $("rm").onchange=renderReports;
 $("rm").value=month;
 $("fm").value=month;
 
+processRecurringMoves();
 render();
+if(localStorage.getItem("mcf_onboarding_seen")!=="1")setTimeout(showGettingStarted,500);
+// Refresh dates and reminder windows when the app returns from background.
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&localStorage.getItem("mcf_reminders_enabled")==="1"){
+    scheduleDeviceReminders({requestPermission:false,quiet:true});
+  }
+});
+window.addEventListener("pageshow",()=>{
+  if(localStorage.getItem("mcf_reminders_enabled")==="1")scheduleDeviceReminders({requestPermission:false,quiet:true});
+});
+// Basic Android/browser back handling: close the sheet before navigating away.
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("sheet").classList.contains("open"))closeSheet()});
 })();
 </script>
 </body>
