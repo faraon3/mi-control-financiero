@@ -1199,11 +1199,28 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
     </div>
     <div class="plan-view" id="planHouse">
       <div class="card" style="margin-bottom:12px">
+        <div class="section-head"><h2>Plantillas del hogar</h2></div>
+        <p class="hint">Crea un registro rápido para los gastos habituales. Revisa el valor, quién pagó y la división antes de guardar.</p>
+        <div class="row" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <button class="btn secondary" type="button" data-house-template="Arriendo">＋ Arriendo</button>
+          <button class="btn secondary" type="button" data-house-template="Servicios públicos">＋ Servicios públicos</button>
+          <button class="btn secondary" type="button" data-house-template="Mercado">＋ Mercado</button>
+          <button class="btn ghost" type="button" data-house-template="Otro gasto del hogar">＋ Otro gasto</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <div class="section-head"><h2>Resumen para compartir</h2></div>
-        <p class="hint">Genera una imagen con los gastos compartidos del mes, el total y la parte de cada uno. Solo incluye gastos del hogar.</p>
+        <p class="hint">Genera una imagen o exporta un CSV con los gastos compartidos del mes, la división acordada y el saldo de conciliación. Solo incluye gastos del hogar.</p>
         <label for="houseShareMonth">Mes del resumen</label>
         <input id="houseShareMonth" type="month">
-        <button class="btn" type="button" style="width:100%;margin-top:12px" onclick="shareHouseSummary()">Compartir gastos del hogar</button>
+        <button class="btn" type="button" style="width:100%;margin-top:12px" onclick="shareHouseSummary()">Compartir imagen del hogar</button>
+        <button class="btn secondary" type="button" style="width:100%;margin-top:8px" onclick="exportHouseSummaryCsv()">Exportar resumen CSV</button>
+        <button class="btn ghost" type="button" style="width:100%;margin-top:8px" onclick="shareHouseSummaryText()">Compartir resumen en texto</button>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="section-head"><h2>Conciliación</h2></div>
+        <p class="hint">El saldo se calcula con lo que pagó cada uno, la parte acordada y los reembolsos registrados. Positivo: tienes saldo a favor; negativo: debes aportar.</p>
+        <div id="houseReconciliationSummary" class="hint"></div>
       </div>
       <div class="card"><div id="houselist" class="list"></div></div>
     </div>
@@ -1972,7 +1989,7 @@ function renderPlan(){
   out("houselist",d.house,h=>{
     const shares=houseShares(h),settled=houseSettled(h),paid=Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0;
     const repayments=(h.repayments||[]).reduce((sum,p)=>sum+Number(p.amount||0),0);
-    return '<div class="item"><div class="main"><div class="t">'+safe(h.name)+'</div><div class="s">'+fmt(h.date)+' · total '+money(shares.total)+'</div><div class="s">Tu parte: '+money(shares.mine)+' · Parte de ella: '+money(shares.spouse)+'</div><div class="s">Pagaste tú: '+money(paid)+' · Reembolsado: '+money(repayments)+'</div><div class="s">'+(settled>0?'Pendiente a tu favor: '+money(settled):settled<0?'Pendiente a favor de ella: '+money(-settled):'Cuenta equilibrada')+'</div><div class="row" style="margin-top:8px;gap:8px"><button class="btn ghost" type="button" data-house-edit="'+h.id+'">Editar</button><button class="btn ghost" type="button" data-house-payback="'+h.id+'">Registrar abono</button></div></div></div>';
+    return '<div class="item"><div class="main"><div class="t">'+safe(h.name)+'</div><div class="s">'+fmt(h.date)+' · total '+money(shares.total)+'</div><div class="s">Tu parte: '+money(shares.mine)+' · Parte de ella: '+money(shares.spouse)+'</div><div class="s">Pagaste tú: '+money(paid)+' · Pagó ella: '+money(Math.max(0,Number(h.paidBySpouse)||0))+'</div><div class="s">Reembolsos netos registrados: '+money(repayments)+'</div><div class="s">'+(settled>0?'Saldo a tu favor: '+money(settled):settled<0?'Saldo a favor de ella: '+money(-settled):'Cuenta equilibrada')+'</div><div class="row" style="margin-top:8px;gap:8px"><button class="btn ghost" type="button" data-house-edit="'+h.id+'">Editar</button><button class="btn ghost" type="button" data-house-payback="'+h.id+'">Registrar abono</button></div></div></div>';
   },"Sin gastos compartidos");
 }
 
@@ -1980,6 +1997,67 @@ document.addEventListener("click",e=>{
  const edit=e.target.closest("[data-house-edit]");if(edit){openHouseForm(edit.dataset.houseEdit);return}
  const payback=e.target.closest("[data-house-payback]");if(payback){openHouseRepayment(payback.dataset.housePayback);return}
 });
+
+document.querySelectorAll("[data-house-template]").forEach(button=>{
+  button.addEventListener("click",()=>openHouseForm(null,button.dataset.houseTemplate));
+});
+function getHouseSummaryEntries(){
+  const selectedMonth=$("houseShareMonth")?.value||iso(today).slice(0,7);
+  return {selectedMonth,entries:(d.house||[]).filter(h=>String(h.date||"").slice(0,7)===selectedMonth).slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")))};
+}
+function getHouseReconciliation(entries){
+  return entries.reduce((acc,h)=>{
+    const settled=houseSettled(h);
+    acc.total+=Math.max(0,Number(h.amount)||0);
+    acc.myShare+=houseShares(h).mine;
+    acc.spouseShare+=houseShares(h).spouse;
+    acc.balance+=settled;
+    acc.minePaid+=Math.max(0,Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0);
+    acc.spousePaid+=Math.max(0,Number(h.paidBySpouse)||0);
+    return acc;
+  },{total:0,myShare:0,spouseShare:0,balance:0,minePaid:0,spousePaid:0});
+}
+function renderHouseReconciliation(){
+  const out=$("houseReconciliationSummary");if(!out)return;
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){out.textContent="No hay gastos compartidos registrados para este mes.";return}
+  const x=getHouseReconciliation(entries);
+  out.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+    '<div class="card"><div class="hint">Total registrado</div><strong>'+money(x.total)+'</strong></div>'+
+    '<div class="card"><div class="hint">Saldo de conciliación</div><strong style="color:'+(x.balance>0?'var(--success)':x.balance<0?'var(--danger)':'var(--on-surface)')+'">'+(x.balance>0?'A tu favor ':x.balance<0?'A favor de ella ':'Equilibrado ')+money(Math.abs(x.balance))+'</strong></div>'+
+    '<div class="card"><div class="hint">Pagaste tú</div><strong>'+money(x.minePaid)+'</strong></div>'+
+    '<div class="card"><div class="hint">Pagó ella</div><strong>'+money(x.spousePaid)+'</strong></div></div>'+
+    '<p class="hint" style="margin-top:8px">Mes: '+safe(selectedMonth)+'. El saldo suma lo pendiente de cada gasto después de los reembolsos registrados.</p>';
+}
+function csvHouseCell(value){return '"'+String(value??"").replace(/"/g,'""')+'"'}
+function exportHouseSummaryCsv(){
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){toast("No hay gastos del hogar para exportar en ese mes");return}
+  const rows=[["Fecha","Concepto","Total COP","Mi parte COP","Parte de ella COP","Pagué yo COP","Pagó ella COP","Saldo conciliación COP","Estado"]];
+  entries.forEach(h=>{
+    const sh=houseShares(h),balance=houseSettled(h);
+    rows.push([h.date||"",h.name||"",sh.total,sh.mine,sh.spouse,Number(h.paidByMe!==undefined?h.paidByMe:h.paid)||0,Number(h.paidBySpouse)||0,balance,balance>0?"A mi favor":balance<0?"A favor de ella":"Equilibrado"]);
+  });
+  const csv="\uFEFF"+rows.map(row=>row.map(csvHouseCell).join(";")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="resumen_hogar_"+selectedMonth+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast("Resumen del hogar exportado");
+}
+async function shareHouseSummaryText(){
+  const {selectedMonth,entries}=getHouseSummaryEntries();
+  if(!entries.length){toast("No hay gastos del hogar para compartir en ese mes");return}
+  const x=getHouseReconciliation(entries);
+  const lines=["MI CONTROL FINANCIERO · RESUMEN DEL HOGAR · "+selectedMonth,"Total: "+money(x.total),"Mi parte: "+money(x.myShare),"Parte de ella: "+money(x.spouseShare),"Pagado por mí: "+money(x.minePaid),"Pagado por ella: "+money(x.spousePaid),"Conciliación: "+(x.balance>0?"saldo a mi favor "+money(x.balance):x.balance<0?"saldo a favor de ella "+money(-x.balance):"equilibrado"),"","Detalle:"];
+  entries.forEach(h=>{const sh=houseShares(h),b=houseSettled(h);lines.push((h.date||"Sin fecha")+" · "+h.name+" · Total "+money(sh.total)+" · Mi parte "+money(sh.mine)+" · Su parte "+money(sh.spouse)+" · "+(b>0?"A mi favor "+money(b):b<0?"A favor de ella "+money(-b):"Equilibrado"))});
+  const textValue=lines.join("\n");
+  try{
+    if(navigator.share){await navigator.share({title:"Resumen de gastos del hogar",text:textValue});}
+    else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(textValue);toast("Resumen copiado para compartir");}
+    else {const blob=new Blob([textValue],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="resumen_hogar_"+selectedMonth+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast("Resumen de texto exportado");}
+  }catch(err){if(err&&err.name!=="AbortError"){console.error(err);toast("No se pudo compartir el resumen")}}
+}
+$("houseShareMonth")?.addEventListener("change",renderHouseReconciliation);
+
 function openHouseRepayment(id){
  const h=d.house.find(x=>x.id===id);if(!h){toast("No se encontró el gasto");return}
  const balance=houseSettled(h);if(balance===0){toast("Este gasto ya está equilibrado");return}
@@ -2686,13 +2764,13 @@ function houseSettled(h){
   const repayments=(Array.isArray(h&&h.repayments)?h.repayments:[]).reduce((sum,p)=>sum+(p.direction==="paid"?-1:1)*Math.max(0,Number(p.amount)||0),0);
   return paid-mine-repayments;
 }
-function openHouseForm(editId=null){
+function openHouseForm(editId=null,templateName=null){
   const h=editId?d.house.find(x=>x.id===editId):null,sh=h?houseShares(h):{mine:0,spouse:0};
   const mode=h&&h.splitMode?h.splitMode:(h&&Number(h.split??50)!==50?"custom":"equal");
   const payer=h&&h.payer?h.payer:"me",accountId=h&&h.accountId?h.accountId:(d.accounts[0]?d.accounts[0].id:"");
   const accountOptions=d.accounts.map(a=>'<option value="'+safe(a.id)+'" '+(accountId===a.id?"selected":"")+'>'+safe(a.name)+'</option>').join("");
   openSheet('<h3>'+(h?"Editar gasto":"Gasto compartido del hogar")+'</h3><p class="hint">Escoge cómo se reparte. No necesitas calcular porcentajes.</p>'+
-    '<form id="houseForm"><input type="hidden" id="houseId" value="'+(h?h.id:"")+'"><label>Concepto</label><input id="houseName" required value="'+(h?safe(h.name):"")+'" placeholder="Arriendo, mercado, servicios…">'+
+    '<form id="houseForm"><input type="hidden" id="houseId" value="'+(h?h.id:"")+'"><label>Concepto</label><input id="houseName" required value="'+(h?safe(h.name):safe(templateName||""))+'" placeholder="Arriendo, mercado, servicios…">'+
     '<label>Valor total (COP)</label><input id="houseAmount" type="number" inputmode="numeric" min="1" step="1" required value="'+(h?h.amount:"")+'">'+
     '<label>¿Cómo se reparte?</label><select id="houseMode"><option value="equal" '+(mode==="equal"?"selected":"")+'>Mitad y mitad</option><option value="me" '+(mode==="me"?"selected":"")+'>Yo asumo todo</option><option value="spouse" '+(mode==="spouse"?"selected":"")+'>Mi esposa asume todo</option><option value="custom" '+(mode==="custom"?"selected":"")+'>Valores específicos</option></select>'+
     '<div id="houseCustomShares" class="row" style="display:'+(mode==="custom"?"grid":"none")+'"><div><label>Mi parte (COP)</label><input id="houseMyShare" type="number" inputmode="numeric" min="0" step="1" value="'+sh.mine+'"></div><div><label>Parte de mi esposa (COP)</label><input id="houseSpouseShare" type="number" inputmode="numeric" min="0" step="1" value="'+sh.spouse+'"></div></div>'+
@@ -3177,6 +3255,11 @@ function runSmokeTests(){
   test("Estimación diaria",Number.isFinite(computeSafeDaily()),"La estimación debe ser un número finito.");
   test("IDs de cuentas",d.accounts.every(a=>!!a.id),"Cada cuenta debe tener identificador.");
   test("Reparto hogar suma el total",d.house.every(h=>{const z=houseShares(h);return z.mine>=0&&z.spouse>=0&&z.mine+z.spouse===z.total;}),"Valida las partes registradas de cada gasto.");
+  test("Hogar: plantilla abre el formulario",document.querySelectorAll("[data-house-template]").length>=3);
+  test("Hogar: saldo con pagos parciales",houseSettled({amount:100000,myShare:60000,paidByMe:40000,paidBySpouse:60000,repayments:[]})===-20000);
+  test("Hogar: reembolso recibido reduce saldo a favor",houseSettled({amount:100000,myShare:50000,paidByMe:100000,repayments:[{amount:20000,direction:"received"}]})===30000);
+  test("Hogar: pago a pareja reduce deuda",houseSettled({amount:100000,myShare:50000,paidByMe:0,repayments:[{amount:20000,direction:"paid"}]})===-30000);
+  test("Hogar: exportación CSV y resumen compartible",typeof exportHouseSummaryCsv==="function"&&typeof shareHouseSummaryText==="function");
   test("Hogar: si pagas todo, calcula lo que ella debe",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[]})===500000);
   test("Hogar: los abonos reducen el saldo",houseSettled({amount:1000000,myShare:500000,paidByMe:1000000,repayments:[{amount:200000}]})===300000);
   test("Hogar: si ella paga todo, calcula lo que tú debes",houseSettled({amount:1000000,myShare:500000,paidByMe:0,repayments:[]})===-500000);
