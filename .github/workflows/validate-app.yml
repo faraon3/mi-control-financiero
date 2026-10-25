@@ -1,0 +1,78 @@
+name: Validar aplicación web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'www/**'
+      - 'package.json'
+      - '.github/workflows/validate-app.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'www/**'
+      - 'package.json'
+      - '.github/workflows/validate-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validar HTML y JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar estructura principal
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path("www/index.html").read_text(encoding="utf-8")
+          required = [
+              "<!doctype html",
+              "<html",
+              "</html>",
+              "<script>",
+              "</script>",
+              "function save()",
+              "function render()",
+              "function computeAvailable",
+              "runIntegrityCheck",
+              "runSmokeTests",
+          ]
+          missing = [item for item in required if item.lower() not in html.lower()]
+          if missing:
+              raise SystemExit("Faltan elementos esperados: " + ", ".join(missing))
+          print("Estructura principal verificada.")
+          PY
+
+      - name: Comprobar sintaxis JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("www/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script\\b[^>]*>(.*?)</script>", html, flags=re.I | re.S)
+          if not scripts:
+              raise SystemExit("No se encontró JavaScript inline para comprobar.")
+          for i, script in enumerate(scripts, 1):
+              Path(f"/tmp/mcf-script-{i}.js").write_text(script, encoding="utf-8")
+          Path("/tmp/mcf-script-count.txt").write_text(str(len(scripts)), encoding="utf-8")
+          print(f"Se encontraron {len(scripts)} bloque(s) JavaScript.")
+          PY
+          count=$(cat /tmp/mcf-script-count.txt)
+          for i in $(seq 1 "$count"); do
+            node --check "/tmp/mcf-script-$i.js"
+          done
+
+      - name: Verificar configuración Capacitor
+        run: |
+          node -e "const p=require('./package.json'); if(!p.dependencies?.['@capacitor/core']) process.exit(1); console.log('Configuración de dependencias Capacitor encontrada.')" 
