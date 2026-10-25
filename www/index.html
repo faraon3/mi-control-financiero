@@ -929,6 +929,26 @@ nav.bottom button{font-size:10px;gap:3px}
 nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-bottom:1px}
 @media(max-width:360px){.home-stat{padding:13px 10px}.stat-top{font-size:11px}.home-stat strong{font-size:16px}.hero{padding:19px 16px}}
 
+
+/* Acciones rápidas: modo oscuro con iconos multicolor */
+.type-btn{position:relative;overflow:hidden;gap:8px;align-content:start;transition:border-color .18s ease,transform .18s ease,background .18s ease}
+.type-btn .ic{width:42px;height:42px;min-width:42px;border-radius:14px;display:grid;place-items:center;background:var(--action-bg, #202a3d);color:var(--action-color,#60a5fa);margin-bottom:4px}
+.type-btn .ic svg{width:22px;height:22px;stroke:currentColor;filter:drop-shadow(0 0 5px color-mix(in srgb,currentColor 22%,transparent))}
+.type-btn .t{font-weight:750;letter-spacing:-.15px}
+.type-btn .s{line-height:1.4}
+.type-btn:nth-child(11n+1){--action-color:#fb7185;--action-bg:#3a202d}
+.type-btn:nth-child(11n+2){--action-color:#4ade80;--action-bg:#19352e}
+.type-btn:nth-child(11n+3){--action-color:#60a5fa;--action-bg:#1d2d49}
+.type-btn:nth-child(11n+4){--action-color:#fbbf24;--action-bg:#3b301b}
+.type-btn:nth-child(11n+5){--action-color:#fb923c;--action-bg:#3b2920}
+.type-btn:nth-child(11n+6){--action-color:#c084fc;--action-bg:#332343}
+.type-btn:nth-child(11n+7){--action-color:#2dd4bf;--action-bg:#193936}
+.type-btn:nth-child(11n+8){--action-color:#f472b6;--action-bg:#3a2234}
+.type-btn:nth-child(11n+9){--action-color:#93c5fd;--action-bg:#202e45}
+.type-btn:nth-child(11n+10){--action-color:#22d3ee;--action-bg:#19343d}
+.type-btn:nth-child(11n+11){--action-color:#a3e635;--action-bg:#2b351e}
+.type-btn:active{transform:scale(.985)}
+@media(prefers-reduced-motion:reduce){.type-btn{transition:none}}
 </style>
 </head>
 <body>
