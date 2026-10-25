@@ -1282,6 +1282,8 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
       <button class="btn ghost" id="importEncryptedBtn" style="margin-top:8px">Importar copia cifrada</button>
       <input id="importEncrypted" type="file" accept=".mcf,.json,application/json" hidden>
       <button class="btn ghost" id="csv" style="margin-top:8px">Exportar CSV (todos los datos)</button>
+      <button class="btn ghost" id="importBankCsvBtn" style="margin-top:8px">Importar movimientos bancarios CSV</button>
+      <input id="importBankCsv" type="file" accept=".csv,text/csv" hidden>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
         <div style="font-weight:700">Revisión de datos</div>
         <div class="hint" style="margin-top:5px">Busca posibles inconsistencias sin modificar tus registros.</div>
@@ -3276,6 +3278,72 @@ $("restoreAutoBackup").onclick=()=>{
 updateAutoBackupStatus();
 // Escapa todos los campos CSV, incluidos comas, comillas y saltos de línea.
 const csvCell = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+function parseCsvText(text,delimiter){
+  const rows=[];let row=[],field="",quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}
+    else if(c==='"')quoted=true;
+    else if(c===delimiter){row.push(field);field=""}
+    else if(c==="\n"){row.push(field.replace(/\r$/,""));rows.push(row);row=[];field=""}
+    else field+=c;
+  }
+  if(field.length||row.length){row.push(field.replace(/\r$/,""));rows.push(row)}
+  return rows.filter(r=>r.some(v=>String(v).trim()!==""));
+}
+function normalizeCsvHeader(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"")}
+function parseCsvMoney(v){
+  let x=String(v??"").trim().replace(/[\s$]/g,"");
+  if(!x)return 0;
+  if(x.includes(",")&&x.includes(".")){if(x.lastIndexOf(",")>x.lastIndexOf("."))x=x.replace(/\./g,"").replace(",",".");else x=x.replace(/,/g,"")}
+  else if(x.includes(",")){const parts=x.split(",");x=parts[parts.length-1].length===3?x.replace(/,/g,""):x.replace(",",".")}
+  else if((x.match(/\./g)||[]).length>1)x=x.replace(/\./g,"");
+  else if(x.includes(".")&&x.split(".")[1].length===3)x=x.replace(".","");
+  return Number(x.replace(/[^0-9.-]/g,""))||0;
+}
+$("importBankCsvBtn").onclick=()=>{if(!d.accounts.length){toast("Crea primero una cuenta para importar movimientos");return}$("importBankCsv").click()};
+$("importBankCsv").onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{
+    const text=await file.text(),delimiter=(text.split("\n")[0].split(";").length>text.split("\n")[0].split(",").length)?";":",";
+    const rows=parseCsvText(text,delimiter);if(rows.length<2)throw new Error("El CSV no tiene filas de datos");
+    const headers=rows[0].map(normalizeCsvHeader);
+    const find=names=>headers.findIndex(h=>names.includes(h));
+    const dateIdx=find(["fecha","date","fechamovimiento","transactiondate","bookingdate"]);
+    const descIdx=find(["descripcion","concepto","detalle","description","merchant","comercio","referencia","movimiento"]);
+    const amountIdx=find(["valor","monto","importe","amount","transactionamount","valorcop","valortransaccion"]);
+    const typeIdx=find(["tipo","type","tipomovimiento","transactiontype","naturaleza"]);
+    const debitIdx=find(["debito","debitos","debit","retiro","retiros","cargo","cargos"]);
+    const creditIdx=find(["credito","credit","abono","abonos","deposito","depositos"]);
+    const categoryIdx=find(["categoria","category"]);
+    if(dateIdx<0||descIdx<0||(amountIdx<0&&debitIdx<0&&creditIdx<0))throw new Error("No detecté las columnas necesarias. El CSV debe incluir fecha, descripción y valor o columnas débito/crédito.");
+    const parseDate=v=>{
+      const x=String(v||"").trim();let m=x.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if(m)return m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0");
+      m=x.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if(m)return m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
+      return "";
+    };
+    const preview=[];
+    rows.slice(1).forEach(r=>{
+      const date=parseDate(r[dateIdx]);const desc=String(r[descIdx]||"").trim();
+      let amount=amountIdx>=0?parseCsvMoney(r[amountIdx]):0;let type="expense";
+      if(debitIdx>=0||creditIdx>=0){
+        const debit=debitIdx>=0?Math.abs(parseCsvMoney(r[debitIdx])):0,credit=creditIdx>=0?Math.abs(parseCsvMoney(r[creditIdx])):0;
+        if(credit>0&&debit===0){amount=credit;type="income"}else if(debit>0){amount=debit;type="expense"}
+      }else if(typeIdx>=0&&/ingreso|abono|credito|deposit|consignacion|credit/i.test(r[typeIdx]||""))type="income";
+      else if(amount<0){amount=Math.abs(amount);type="income"}
+      const account=d.accounts[0];
+      if(date&&desc&&Number.isSafeInteger(Math.round(amount))&&amount>0&&account){
+        const duplicate=d.moves.some(m=>m.date===date&&m.type===type&&Number(m.amount)===Math.round(amount)&&String(m.desc||"").trim().toLowerCase()===desc.toLowerCase());
+        if(!duplicate)preview.push({id:uid(),date,desc:desc.slice(0,100),type,amount:Math.round(amount),cat:categoryIdx>=0&&String(r[categoryIdx]||"").trim()?String(r[categoryIdx]).trim().slice(0,50):"Otros",account:account.id,note:"Importado desde CSV bancario",created:now()});
+      }
+    });
+    if(!preview.length){toast("No encontré movimientos nuevos válidos; revisa los encabezados y fechas");return}
+    openSheet('<h3>Importar movimientos</h3><p class="hint">Se encontraron '+preview.length+' movimiento(s) nuevo(s). Se usarán en la cuenta '+safe(d.accounts[0].name)+'. Los duplicados detectados se omiten.</p><div class="list" style="max-height:40vh;overflow:auto">'+preview.slice(0,12).map(m=>'<div class="item"><div class="main"><div class="t">'+safe(m.desc)+'</div><div class="s">'+fmt(m.date)+' · '+(m.type==="income"?"Ingreso":"Gasto")+'</div></div><div class="amt">'+money(m.amount)+'</div></div>').join("")+(preview.length>12?'<p class="hint">Y '+(preview.length-12)+' más…</p>':"")+'</div><button class="btn" id="confirmBankImport" style="margin-top:16px">Importar '+preview.length+' movimientos</button>');
+    $("confirmBankImport").onclick=()=>{d.moves.push(...preview);log("Importación","CSV bancario",preview.length+" movimientos importados");save();closeSheet();toast("Movimientos importados");e.target.value=""};
+  }catch(err){console.error(err);toast(err.message||"No se pudo leer el CSV")}
+};
 $("csv").onclick=()=>{
   // Un único CSV con filas identificadas por sección para poder abrirlo en Excel.
   const headers=["Sección","ID","Nombre/Descripción","Tipo","Fecha","Vencimiento","Valor/Saldo","Categoría","Cuenta","Estado","Periodicidad","Cuota","Cupo total","Día de pago","Detalle"];
