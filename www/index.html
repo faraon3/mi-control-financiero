@@ -1688,7 +1688,7 @@ async function shareHouseSummary(){
   const yourPart=entries.reduce((sum,h)=>sum+Math.max(0,Number(h.amount)||0)*(Number(h.split??50)/100),0);
   const otherPart=total-yourPart;
   const canvas=document.createElement("canvas");
-  const width=1080,pad=64,rowH=78,headerH=300,summaryH=250,footerH=90;
+  const width=1080,pad=64,rowH=104,headerH=300,summaryH=250,footerH=90;
   canvas.width=width;
   canvas.height=headerH+summaryH+entries.length*rowH+footerH+pad;
   const ctx=canvas.getContext("2d");
@@ -1720,12 +1720,17 @@ async function shareHouseSummary(){
   ctx.fillStyle="#91b8ff";ctx.font="600 25px system-ui";ctx.fillText("DETALLE DE GASTOS",pad+8,y);
   y+=28;
   entries.forEach((h,i)=>{
+    const amount=Math.max(0,Number(h.amount)||0);
+    const split=Math.min(100,Math.max(0,Number(h.split??50)));
+    const yours=amount*split/100;
+    const theirs=amount-yours;
     roundRect(pad,y,width-pad*2,rowH-8,14,i%2===0?"#151f30":"#111a29");
     ctx.fillStyle="#ffffff";ctx.font="600 25px system-ui";
-    ctx.fillText(String(h.name||"Gasto").slice(0,34),pad+22,y+29);
-    ctx.fillStyle="#aebbd0";ctx.font="20px system-ui";ctx.fillText(fmt(h.date),pad+22,y+55);
+    ctx.fillText(String(h.name||"Gasto").slice(0,34),pad+22,y+31);
+    ctx.fillStyle="#aebbd0";ctx.font="19px system-ui";
+    ctx.fillText(fmt(h.date)+" · Tú: "+money(yours)+" · Otra parte: "+money(theirs),pad+22,y+65);
     ctx.fillStyle="#ffffff";ctx.font="600 24px system-ui";
-    ctx.textAlign="right";ctx.fillText(money(Number(h.amount)||0),width-pad-22,y+39);ctx.textAlign="left";
+    ctx.textAlign="right";ctx.fillText(money(amount),width-pad-22,y+42);ctx.textAlign="left";
     y+=rowH;
   });
   ctx.fillStyle="#8190a8";ctx.font="20px system-ui";
