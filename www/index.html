@@ -648,6 +648,19 @@ nav.bottom button.add .ic{
    MISC
    ============================================================ */
 canvas{width:100%;height:200px;max-width:100%}
+.value,.value *{min-width:0;max-width:100%}
+.value{overflow-wrap:anywhere;word-break:break-word;font-variant-numeric:tabular-nums}
+.row > *{min-width:0}
+.home-bill-metrics > div{flex:1 1 0;min-width:0}
+.home-bill-metrics .hint{overflow-wrap:anywhere}
+#planDebts > .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+#planDebts > .row .btn{min-width:0;width:100%;white-space:normal;line-height:1.3;padding:12px 10px}
+@media (max-width:380px){
+  .seg{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .section-head h2{font-size:18px}
+  .value{font-size:clamp(16px,4.5vw,22px)!important}
+}
+@media (max-width:360px){#planDebts > .row{grid-template-columns:1fr}}
 .foot{
   font-size:var(--label-md);
   color:var(--on-surface-muted);
@@ -657,16 +670,18 @@ canvas{width:100%;height:200px;max-width:100%}
 .hidden{display:none!important}
 
 .seg{
-  display:flex;gap:6px;
-  overflow-x:auto;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
   margin:14px 0 10px;
   padding-bottom:4px;
-  scrollbar-width:none;
 }
-.seg::-webkit-scrollbar{display:none}
 .seg button{
-  flex:0 0 auto;
-  padding:9px 14px;
+  min-width:0;
+  width:100%;
+  padding:10px 8px;
+  white-space:normal;
+  line-height:1.25;
   border-radius:var(--shape-full);
   font-size:var(--body-sm);
   font-weight:500;
@@ -951,10 +966,10 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
         <a data-jump="plan">Ver plan</a>
       </div>
       <div class="card" style="margin-bottom:12px">
-        <div class="row" style="gap:10px">
+        <div class="row home-bill-metrics" style="gap:10px">
           <div style="flex:1;min-width:0"><div class="hint">Vencidas</div><div id="billOverdueCount" class="value red" style="font-size:22px;font-weight:750">0</div></div>
           <div style="flex:1;min-width:0"><div class="hint">Vencen en 3 días</div><div id="billSoonCount" class="value" style="font-size:22px;font-weight:750">0</div></div>
-          <div style="flex:1;min-width:0"><div class="hint">Pendientes</div><div id="billPendingTotal" class="value" style="font-size:18px;font-weight:750">$ 0</div></div>
+          <div style="flex:1;min-width:0"><div class="hint">Pendientes</div><div id="billPendingTotal" class="value" style="font-size:clamp(14px,3.8vw,18px);font-weight:750">$ 0</div></div>
         </div>
       </div>
       <div class="card"><div id="upcoming"></div></div>
