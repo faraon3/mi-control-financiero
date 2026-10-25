@@ -1310,6 +1310,8 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
         <div style="font-weight:700">Estado de vencimientos</div>
         <div class="hint" style="margin-top:5px">Resumen local de facturas y cuotas vencidas o próximas. No sustituye las notificaciones del sistema.</div>
         <button class="btn secondary" id="refreshDueStatus" style="margin-top:10px">Actualizar vencimientos</button>
+        <button class="btn ghost" id="enableNotifications" style="margin-top:8px">Activar recordatorios en este dispositivo</button>
+        <div class="hint" id="notificationStatus" style="margin-top:6px">Los recordatorios requieren permiso del dispositivo.</div>
         <div id="dueStatusReport" style="margin-top:10px"></div>
       </div>
       <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px">
@@ -3144,6 +3146,44 @@ function buildWeeklyPlan(){
   </div>`;
 }
 $("buildWeeklyPlan").onclick=()=>buildWeeklyPlan();
+async function scheduleDeviceReminders(){
+  const status=$("notificationStatus");
+  const plugin=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin){
+    if(status)status.textContent="Las notificaciones programadas están disponibles en la APK Android; en la versión web solo se muestran avisos al abrirla.";
+    toast("Esta función requiere la APK Android actualizada");return;
+  }
+  try{
+    let permission=await plugin.checkPermissions();
+    if(permission.display!=="granted")permission=await plugin.requestPermissions();
+    if(permission.display!=="granted"){toast("No se concedió permiso para notificaciones");return}
+    const pending=[];
+    const add=(key,title,body,when)=>{
+      const at=new Date(when);if(Number.isNaN(at.getTime()))return;
+      const nowDate=new Date();if(at<=nowDate)return;
+      let id=0;for(let i=0;i<key.length;i++)id=(id*31+key.charCodeAt(i))%2000000000;
+      pending.push({id:Math.max(1,id),title,body,schedule:{at:at,allowWhileIdle:true},smallIcon:"ic_stat_icon_config_sample"});
+    };
+    const atHour=(date,days,offset=9)=>{
+      const d0=new Date(date+"T12:00:00");d0.setDate(d0.getDate()+days);d0.setHours(offset,0,0,0);return d0;
+    };
+    const nowDate=new Date(),todayKey=iso(nowDate);
+    d.bills.filter(b=>!b.paid&&b.due).forEach(b=>{
+      const due=new Date(b.due+"T09:00:00");
+      [-3,-1,0].forEach(days=>add("bill-"+b.id+"-"+days,"Recordatorio de factura",b.name+" · "+money(b.amount)+(days===0?" vence hoy":days<0?" vence en "+Math.abs(days)+" día(s)":" vence"),atHour(b.due,days)));
+      if(b.due<todayKey){for(let n=1;n<=7;n++)add("overdue-"+b.id+"-"+n,"Factura vencida",b.name+" · pendiente "+money(b.amount),atHour(todayKey,n));}
+    });
+    d.debts.filter(x=>Number(x.amount||0)>0&&x.due).forEach(x=>{
+      [-3,-1,0].forEach(days=>add("debt-"+x.id+"-"+days,"Recordatorio de deuda",x.name+" · cuota "+money(x.installment||0),atHour(x.due,days)));
+      if(x.due<todayKey){for(let n=1;n<=7;n++)add("debt-overdue-"+x.id+"-"+n,"Cuota vencida",x.name+" · revisa el pago",atHour(todayKey,n));}
+    });
+    await plugin.cancel({notifications:(await plugin.getPending()).notifications||[]});
+    if(pending.length)await plugin.schedule({notifications:pending});
+    if(status)status.textContent="Recordatorios programados: "+pending.length+". Revisa este panel después de registrar o pagar facturas para actualizar la programación.";
+    toast("Recordatorios actualizados");
+  }catch(err){console.error("No se pudieron programar recordatorios",err);if(status)status.textContent="No se pudieron programar. Verifica los permisos de notificaciones de Android.";toast("No se pudieron programar los recordatorios")}
+}
+$("enableNotifications").onclick=scheduleDeviceReminders;
 function refreshDueStatus(){
   const out=$("dueStatusReport");
   if(!out)return;
