@@ -43,6 +43,8 @@ jobs:
 
       - name: Preparar icono de la aplicación
         run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
           mkdir -p assets
           cat > assets/icon.svg <<'SVG'
           <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
@@ -66,7 +68,7 @@ jobs:
             <path d="M330 505l62 62 122-140" fill="none" stroke="#4ade80" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           SVG
-          convert -background none assets/icon.svg -resize 1024x1024 assets/icon.png
+          rsvg-convert -w 1024 -h 1024 -o assets/icon.png assets/icon.svg
 
       - name: Generar iconos Android
         run: npx capacitor-assets generate --android
