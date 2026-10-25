@@ -3162,7 +3162,7 @@ async function scheduleDeviceReminders(){
       const at=new Date(when);if(Number.isNaN(at.getTime()))return;
       const nowDate=new Date();if(at<=nowDate)return;
       let id=0;for(let i=0;i<key.length;i++)id=(id*31+key.charCodeAt(i))%2000000000;
-      pending.push({id:Math.max(1,id),title,body,schedule:{at:at,allowWhileIdle:true},smallIcon:"ic_stat_icon_config_sample"});
+      pending.push({id:Math.max(1,id),title,body,schedule:{at:at,allowWhileIdle:true}});
     };
     const atHour=(date,days,offset=9)=>{
       const d0=new Date(date+"T12:00:00");d0.setDate(d0.getDate()+days);d0.setHours(offset,0,0,0);return d0;
