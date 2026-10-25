@@ -2331,7 +2331,11 @@ function view(id){
   if(id===currentView)return;
   const prevIdx=["home","moves","plan","reports"].indexOf(currentView);
   const newIdx=["home","moves","plan","reports"].indexOf(id);
-  document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    const active=b.dataset.tab===id;
+    b.classList.toggle("active",active);
+    if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");
+  });
   document.querySelectorAll(".view").forEach(v=>{
     v.classList.remove("active","slide-back");
     if(v.id===id){
@@ -2607,6 +2611,7 @@ function openBillForm(editId=null){
         <option value="none" ${b?.repeat==="none"?"selected":""}>Única</option>
         <option value="monthly" ${b?.repeat==="monthly"?"selected":""}>Mensual</option>
         <option value="weekly" ${b?.repeat==="weekly"?"selected":""}>Semanal</option>
+        <option value="biweekly" ${b?.repeat==="biweekly"?"selected":""}>Cada quincena (15 días)</option>
         <option value="yearly" ${b?.repeat==="yearly"?"selected":""}>Anual</option>
       </select>
       <button class="btn" style="margin-top:20px">Guardar</button>
@@ -3013,10 +3018,10 @@ function completeBillPayment(billId,accountId){
     const lastDay=new Date(next.getFullYear(),next.getMonth()+1,0,12).getDate();
     next.setDate(Math.min(wantedDay,lastDay));
     d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:"monthly",paid:false});
-  }else if(current.repeat==="weekly"){
+  }else if(current.repeat==="weekly"||current.repeat==="biweekly"){
     const next=new Date(current.due+"T12:00:00");
-    next.setDate(next.getDate()+7);
-    d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:"weekly",paid:false});
+    next.setDate(next.getDate()+(current.repeat==="biweekly"?15:7));
+    d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:current.repeat,paid:false});
   }else if(current.repeat==="yearly"){
     const next=new Date(current.due+"T12:00:00");
     next.setFullYear(next.getFullYear()+1);
