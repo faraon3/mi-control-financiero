@@ -102,6 +102,11 @@ input,select,textarea{font:inherit}
 .icon{display:inline-block;width:20px;height:20px;vertical-align:middle;flex-shrink:0}
 .icon svg{width:100%;height:100%;display:block}
 
+
+/* Bloqueo de seguridad local */
+#securityLockOverlay input{background:var(--surface-container);color:var(--on-surface);border:1px solid var(--outline);border-radius:12px;padding:14px;letter-spacing:4px;font-size:20px;text-align:center}
+#securityLockOverlay input:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+
 /* ============================================================
    HEADER
    ============================================================ */
@@ -1276,7 +1281,16 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
     </div>
 
     <div class="card" style="margin-top:12px">
-      <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Respaldo</div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Seguridad local</div>
+        <p class="hint" style="margin:8px 0">Bloqueo con PIN y cierre automático tras 15 minutos sin actividad.</p>
+        <div id="securityStatus" class="hint">Consultando configuración...</div>
+        <button class="btn secondary" id="configureSecurityPin" style="margin-top:10px">Configurar o cambiar PIN</button>
+        <button class="btn ghost" id="removeSecurityPin" style="margin-top:8px">Desactivar PIN</button>
+      </div>
+
+            <div class="hint" style="text-transform:uppercase;letter-spacing:.6px;font-size:11px">Respaldo</div>
       <button class="btn secondary" id="export" style="margin-top:12px">Exportar JSON</button>
       <button class="btn ghost" id="exportEncrypted" style="margin-top:8px">Exportar copia cifrada con contraseña</button>
       <button class="btn ghost" id="importEncryptedBtn" style="margin-top:8px">Importar copia cifrada</button>
@@ -1390,6 +1404,20 @@ nav.bottom button.add .ic{width:46px;height:30px;border-radius:12px;margin-botto
 </nav>
 
 <!-- ============ SHEET ============ -->
+
+<!-- Bloqueo local por PIN -->
+<div id="securityLockOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--surface-dim);padding:24px;align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:360px;padding:24px">
+    <div style="font-size:28px;text-align:center">🔒</div>
+    <h2 style="text-align:center;margin:8px 0">Mi Control Financiero</h2>
+    <p id="securityLockMessage" class="hint" style="text-align:center">Ingresa tu PIN para continuar.</p>
+    <label for="securityPinInput">PIN de seguridad</label>
+    <input id="securityPinInput" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" style="width:100%;margin-top:8px">
+    <button id="securityUnlockBtn" class="btn" style="width:100%;margin-top:14px">Desbloquear</button>
+    <p class="hint" style="font-size:11px;margin-top:12px">El PIN bloquea el acceso a la interfaz, pero no cifra por sí solo los datos guardados en este dispositivo. Conserva una copia de seguridad.</p>
+  </div>
+</div>
+
 <div class="sheet-backdrop" id="sheetBg"></div>
 <div class="sheet" id="sheet">
   <div class="grab" id="sheetGrab"></div>
@@ -1433,6 +1461,99 @@ let d={moves:[],accounts:[],transfers:[],budgets:[],bills:[],debts:[],goals:[],h
 try{let o=JSON.parse(localStorage.getItem(K)||"null");if(o)Object.keys(d).forEach(k=>d[k]=Array.isArray(o[k])?o[k]:[])}catch(e){}
 
 function log(a,e,det,r=""){d.audit.unshift({id:uid(),at:now(),action:a,entity:e,details:det,reason:r});d.audit=d.audit.slice(0,1000)}
+
+/* ============ SEGURIDAD LOCAL: PIN + INACTIVIDAD ============ */
+const SECURITY_KEY="mcf_security_v1";
+const SECURITY_TIMEOUT=15*60*1000;
+let securityConfig=null, securityLastActivity=Date.now(), securityLocked=false, securityAttempts=0, securityRetryAt=0;
+async function pinDigest(pin,salt){
+  const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:salt,iterations:210000,hash:"SHA-256"},material,256);
+  return securityB64(new Uint8Array(bits));
+}
+function securityB64(bytes){let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary)}
+function securityFromB64(value){const binary=atob(value);return Uint8Array.from(binary,c=>c.charCodeAt(0))}
+function readSecurityConfig(){
+  try{const v=JSON.parse(localStorage.getItem(SECURITY_KEY)||"null");return v&&v.version===1&&v.salt&&v.digest?v:null}catch(e){return null}
+}
+function refreshSecurityStatus(){
+  const el=$("securityStatus");if(!el)return;
+  el.textContent=securityConfig?"PIN activado · bloqueo tras 15 minutos sin actividad.":"PIN desactivado.";
+  $("removeSecurityPin").style.display=securityConfig?"block":"none";
+}
+function showSecurityLock(message="Ingresa tu PIN para continuar."){
+  if(!securityConfig)return;
+  securityLocked=true;
+  $("securityLockOverlay").style.display="flex";
+  $("securityLockMessage").textContent=message;
+  $("securityPinInput").value="";
+  $("securityUnlockBtn").disabled=Date.now()<securityRetryAt;
+  setTimeout(()=>$("securityPinInput").focus(),100);
+}
+function hideSecurityLock(){
+  securityLocked=false;securityLastActivity=Date.now();
+  $("securityLockOverlay").style.display="none";
+  $("securityPinInput").value="";
+}
+async function configureSecurityPin(){
+  const pin=prompt("Crea un PIN de 6 a 12 dígitos. No lo olvides: no hay recuperación automática.");
+  if(pin===null)return;
+  if(!/^\d{6,12}$/.test(pin)){toast("El PIN debe tener entre 6 y 12 dígitos");return}
+  const confirmPin=prompt("Escribe nuevamente el PIN para confirmarlo.");
+  if(confirmPin===null)return;
+  if(pin!==confirmPin){toast("Los PIN no coinciden");return}
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const digest=await pinDigest(pin,salt);
+    securityConfig={version:1,salt:securityB64(salt),digest};
+    localStorage.setItem(SECURITY_KEY,JSON.stringify(securityConfig));
+    refreshSecurityStatus();toast("PIN configurado");
+  }catch(err){console.error(err);toast("No se pudo configurar el PIN en este dispositivo")}
+}
+$("configureSecurityPin").onclick=configureSecurityPin;
+$("removeSecurityPin").onclick=()=>{
+  if(!securityConfig)return;
+  m3Confirm({title:"Desactivar el PIN",message:"La aplicación dejará de bloquearse al abrirse y después de la inactividad.",confirmLabel:"Desactivar",danger:true},()=>{
+    localStorage.removeItem(SECURITY_KEY);securityConfig=null;hideSecurityLock();refreshSecurityStatus();closeSheet();toast("PIN desactivado");
+  });
+};
+$("securityUnlockBtn").onclick=async()=>{
+  if(!securityConfig){hideSecurityLock();return}
+  if(Date.now()<securityRetryAt){toast("Espera unos segundos antes de volver a intentar");return}
+  const pin=$("securityPinInput").value.trim();
+  if(!/^\d{6,12}$/.test(pin)){toast("Ingresa tu PIN de 6 a 12 dígitos");return}
+  $("securityUnlockBtn").disabled=true;
+  try{
+    const digest=await pinDigest(pin,securityFromB64(securityConfig.salt));
+    if(digest===securityConfig.digest){securityAttempts=0;securityRetryAt=0;hideSecurityLock()}
+    else{
+      securityAttempts++;
+      const wait=Math.min(30000,securityAttempts*2000);
+      securityRetryAt=Date.now()+wait;
+      $("securityPinInput").value="";
+      $("securityLockMessage").textContent="PIN incorrecto. Espera "+Math.ceil(wait/1000)+" segundos antes de volver a intentar.";
+      setTimeout(()=>{if(Date.now()>=securityRetryAt)$("securityUnlockBtn").disabled=false},wait);
+    }
+  }catch(err){console.error(err);toast("No se pudo verificar el PIN")}
+  finally{if(!securityLocked||Date.now()>=securityRetryAt)$("securityUnlockBtn").disabled=false}
+};
+$("securityPinInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("securityUnlockBtn").click()});
+function securityActivity(){
+  if(securityLocked||!securityConfig)return;
+  securityLastActivity=Date.now();
+}
+["pointerdown","keydown","touchstart","click"].forEach(ev=>document.addEventListener(ev,securityActivity,{passive:true}));
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  if(securityConfig&&Date.now()-securityLastActivity>=SECURITY_TIMEOUT)showSecurityLock("La sesión se bloqueó por inactividad. Ingresa tu PIN.");
+});
+setInterval(()=>{
+  if(securityConfig&&!securityLocked&&Date.now()-securityLastActivity>=SECURITY_TIMEOUT)showSecurityLock("La sesión se bloqueó por 15 minutos de inactividad.");
+},15000);
+securityConfig=readSecurityConfig();
+refreshSecurityStatus();
+if(securityConfig)showSecurityLock("Ingresa tu PIN para continuar.");
+
 function advanceRecurrence(date,repeat){
   const dt=new Date(date+"T12:00:00");
   if(repeat==="weekly")dt.setDate(dt.getDate()+7);
