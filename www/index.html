@@ -1193,17 +1193,26 @@ function out(id,arr,fn,empty="No hay registros todavía."){const el=$(id);if(!el
   </div>`}
 }
 
+function dateIsInCurrentMonth(value){
+  return !!value && String(value).slice(0,7)===iso(new Date()).slice(0,7);
+}
 function computeAvailable(){
+  // Solo se descuentan compromisos pendientes con vencimiento dentro del mes actual.
+  // Las facturas y cuotas futuras no deben reducir el disponible de este mes.
   const saldo=d.accounts.reduce((s,a)=>s+bal(a),0);
-  const pendingBills=d.bills.filter(b=>!b.paid).reduce((s,b)=>s+b.amount,0);
-  const debtInstallments=d.debts.reduce((s,x)=>s+(x.installment||0),0);
-  return saldo - pendingBills - debtInstallments;
+  const pendingBills=d.bills
+    .filter(b=>!b.paid && dateIsInCurrentMonth(b.due))
+    .reduce((s,b)=>s+Number(b.amount||0),0);
+  const debtInstallments=d.debts
+    .filter(x=>Number(x.amount||0)>0 && dateIsInCurrentMonth(x.due))
+    .reduce((s,x)=>s+Math.min(Number(x.installment||0),Number(x.amount||0)),0);
+  return saldo-pendingBills-debtInstallments;
 }
 function computeSafeDaily(){
   const avail=computeAvailable();
   const now=new Date();
   const endOfMonth=new Date(now.getFullYear(),now.getMonth()+1,0);
-  const daysLeft=Math.max(1,Math.ceil((endOfMonth-now)/(1000*60*60*24)));
+  const daysLeft=Math.max(1,endOfMonth.getDate()-now.getDate()+1);
   return avail/daysLeft;
 }
 
@@ -1268,7 +1277,7 @@ function render(){
     $("priorityText").textContent=monthMoves.length?"Vas registrando tu actividad. Revisa tu disponible antes de hacer nuevos gastos.":"Registra tus ingresos y gastos para ver aquí un resumen útil de tu mes.";
   }
   $("heroSub").textContent=`${d.accounts.length} cuenta${d.accounts.length===1?"":"s"} · ${d.moves.length} movimiento${d.moves.length===1?"":"s"}`;
-  $("safeSpend").textContent=money(Math.max(0,safeDaily));
+  $("safeSpend").textContent=money(safeDaily);
   $("safeSpend").classList.toggle("neg",safeDaily<0);
   $("safeDot").classList.toggle("neg",safeDaily<0);
   const availEl=$("available");
@@ -2014,18 +2023,41 @@ function openDebtPicker(){
 }
 function openDebtPay(id){
   const x=d.debts.find(z=>z.id===id);
+  if(!x){toast("No se encontró la deuda");return}
+  if(!d.accounts.length){toast("Primero crea una cuenta para registrar desde dónde pagaste");return}
   openSheet(`<h3>Abono a ${safe(x.name)}</h3>
     <p class="hint">Saldo actual: ${money(x.amount)}</p>
     <form id="debtPayForm">
       <label>Valor del abono</label>
-      <input id="debtPayAmount" type="number" min="1" max="${x.amount}" required>
+      <input id="debtPayAmount" type="number" min="1" max="${Number(x.amount)||0}" step="1" required>
+      <label>Cuenta desde la que pagas</label>
+      <select id="debtPayAccount" required>
+        ${d.accounts.map(a=>`<option value="${safe(a.id)}">${safe(a.name)} · ${money(bal(a))}</option>`).join("")}
+      </select>
+      <label>Fecha del pago</label>
+      <input id="debtPayDate" type="date" value="${iso(today)}" max="${iso(today)}" required>
       <button class="btn" style="margin-top:20px">Registrar abono</button>
     </form>`);
   $("debtPayForm").onsubmit=e=>{
     e.preventDefault();
     const v=Number($("debtPayAmount").value);
-    if(v>0&&v<=x.amount){x.amount-=v;log("Abono","Deuda",`${x.name}: -${money(v)}`);save();closeSheet();toast("Abono registrado")}
-    else toast("Valor no válido");
+    const accountId=$("debtPayAccount").value;
+    const paidDate=$("debtPayDate").value;
+    const account=d.accounts.find(a=>a.id===accountId);
+    const debt=d.debts.find(z=>z.id===id);
+    if(!debt||!account){toast("No se encontró la deuda o la cuenta");return}
+    if(!Number.isSafeInteger(v)||v<=0||v>Number(debt.amount)){toast("El abono debe ser mayor que cero y no superar el saldo pendiente");return}
+    if(!paidDate||paidDate>iso(today)){toast("Revisa la fecha del pago");return}
+    // El abono reduce la deuda y también registra la salida de dinero en la cuenta.
+    // Así el saldo de la cuenta refleja el pago y no se pierde el historial del movimiento.
+    debt.amount=Number(debt.amount)-v;
+    d.moves.push({
+      id:uid(),type:"expense",date:paidDate,desc:`Abono deuda: ${debt.name}`,
+      amount:v,cat:"Deudas",account:account.id,note:"Abono a deuda",created:now()
+    });
+    if(debt.amount===0)debt.paid=true;
+    log("Abono","Deuda",`${debt.name}: -${money(v)} desde ${account.name}`);
+    save();closeSheet();toast("Abono registrado y descontado de la cuenta");
   };
 }
 
@@ -2070,8 +2102,13 @@ function confirmPayBill(billId){
     }
     // Crear la siguiente factura solo una vez, según la periodicidad configurada.
     if(current.repeat==="monthly"){
-      const next=new Date(current.due+"T12:00:00");
-      next.setMonth(next.getMonth()+1);
+      // Conserva el día de vencimiento cuando exista; evita que el 29, 30 o 31
+      // salte al mes siguiente por el desbordamiento de Date.setMonth().
+      const dueDate=new Date(current.due+"T12:00:00");
+      const wantedDay=dueDate.getDate();
+      const next=new Date(dueDate.getFullYear(),dueDate.getMonth()+1,1,12);
+      const lastDay=new Date(next.getFullYear(),next.getMonth()+1,0,12).getDate();
+      next.setDate(Math.min(wantedDay,lastDay));
       d.bills.push({id:uid(),name:current.name,amount:current.amount,due:iso(next),cat:current.cat,repeat:"monthly",paid:false});
     }else if(current.repeat==="weekly"){
       const next=new Date(current.due+"T12:00:00");
@@ -2252,15 +2289,50 @@ $("import").onchange=e=>{
         toast("Copia inválida: faltan secciones ("+missing.join(", ")+")");
         return;
       }
+      // Valida todas las secciones antes de reemplazar datos locales.
+      const isObj = value => !!value && typeof value === "object" && !Array.isArray(value);
       const invalidMoves=parsed.moves.some(m=>
-        !m || typeof m!=="object" || !Number.isFinite(Number(m.amount)) ||
-        !m.id || !m.date || !m.type
+        !isObj(m) || !m.id || !m.date ||
+        !["income","expense"].includes(m.type) ||
+        !Number.isFinite(Number(m.amount)) || Number(m.amount)<=0
       );
       const invalidAccounts=parsed.accounts.some(a=>
-        !a || typeof a!=="object" || !a.id || !a.name
+        !isObj(a) || !a.id || !String(a.name||"").trim() ||
+        !Number.isFinite(Number(a.opening||0))
       );
-      if(invalidMoves || invalidAccounts){
-        toast("Copia inválida: revisa movimientos y cuentas");
+      const invalidTransfers=parsed.transfers.some(t=>
+        !isObj(t) || !t.id || !t.from || !t.to ||
+        t.from===t.to || !Number.isFinite(Number(t.amount)) || Number(t.amount)<=0
+      );
+      const invalidBudgets=parsed.budgets.some(x=>
+        !isObj(x) || !x.id || !x.cat ||
+        !Number.isFinite(Number(x.limit)) || Number(x.limit)<=0
+      );
+      const invalidBills=parsed.bills.some(x=>
+        !isObj(x) || !x.id || !x.name || !x.due ||
+        !Number.isFinite(Number(x.amount)) || Number(x.amount)<=0
+      );
+      const invalidDebts=parsed.debts.some(x=>
+        !isObj(x) || !x.id || !x.name ||
+        !Number.isFinite(Number(x.amount)) || Number(x.amount)<0
+      );
+      const invalidGoals=parsed.goals.some(x=>
+        !isObj(x) || !x.id || !x.name ||
+        !Number.isFinite(Number(x.target)) || Number(x.target)<=0 ||
+        !Number.isFinite(Number(x.saved||0)) || Number(x.saved||0)<0
+      );
+      const invalidHouse=parsed.house.some(x=>
+        !isObj(x) || !x.id || !x.name ||
+        !Number.isFinite(Number(x.amount)) || Number(x.amount)<=0
+      );
+      const sections=[parsed.moves,parsed.accounts,parsed.transfers,parsed.budgets,
+        parsed.bills,parsed.debts,parsed.goals,parsed.house];
+      const allIds=sections.flat().map(x=>x?.id).filter(Boolean);
+      const duplicateIds=allIds.length!==new Set(allIds).size;
+      if(invalidMoves || invalidAccounts || invalidTransfers || invalidBudgets ||
+         invalidBills || invalidDebts || invalidGoals || invalidHouse || duplicateIds){
+        toast(duplicateIds ? "Copia inválida: hay identificadores duplicados" :
+          "Copia inválida: revisa los registros antes de restaurar");
         return;
       }
       m3Confirm({
